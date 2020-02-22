@@ -1,11 +1,11 @@
 {
   "manifest_version": 2,
-  "name": "Hugo Zzo theme",
-  "short_name": "Hugo Zzo theme",
+  "name": "二木浮生记",
+  "short_name": "二木浮生记",
   "version": "1.0.0",
-  "default_locale": "en",
-  "description": "Hugo blog theme with rich features",
-  "start_url": "https://themes.gohugo.io/theme/hugo-theme-zzo/",
+  "default_locale": "zh",
+  "description": "Lim's Blog",
+  "start_url": "https://limxw.com",
   "icons": [
     {
       "src": "favicon/android-icon-36x36.png",
