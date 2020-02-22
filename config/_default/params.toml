@@ -40,7 +40,7 @@ pubPaginate = 20
 # whoami
 myname = "WingLim"
 email = "winglim@qq.com"
-whoami = "Web Developer"
+whoami = "DevOps"
 bioImageUrl = ""
 useGravatar = false
 location = "Hangzhou, China"
@@ -136,7 +136,6 @@ commento = false
   email = "mailto:winglim@qq.com"
   twitter = "https://twitter.com/WingLims"
   github = "https://github.com/WingLim"
-  telegram = "https://t.me/WingLim"
   douban = "https://www.douban.com/people/82451512/"
 
 [[footerLinks]]

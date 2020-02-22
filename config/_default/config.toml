@@ -2,6 +2,7 @@ baseURL = "http://example.org"
 title = "二木浮生记"
 theme = "zzo"
 
+defaultContentLanguage = "zh"
 hasCJKLanguage = true
 
 summaryLength = 70
