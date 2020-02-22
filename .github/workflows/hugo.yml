@@ -3,7 +3,7 @@ name: Deploy Hugo to Github Pages
 on:
   push:
     branches:
-      - master
+      - hugo
 
 jobs:
   build-deploy:
@@ -27,3 +27,4 @@ jobs:
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           publish_dir: ./public
+          publish_branch: master
