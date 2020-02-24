@@ -18,6 +18,10 @@ image:
 typora-root-url: ..\..\..\static\
 ---
 
+最近在使用 WSL 作为开发环境，但有些图形化软件无法打开，例如Qemu，通过 X11 Forwarding 来打通这个壁垒。
+
+<!--more-->
+
 ## 什么是 X 协议
 
 X 协议由 X server 和 X client 组成：
