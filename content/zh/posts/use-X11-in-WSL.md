@@ -10,6 +10,7 @@ tocPosition: inner
 tocLevels: ["h2", "h3", "h4"]
 tags:
 - WSL
+- Qemu
 series:
 -
 categories:
@@ -18,7 +19,7 @@ image:
 typora-root-url: ..\..\..\static\
 ---
 
-最近在使用 WSL 作为开发环境，但有些图形化软件无法打开，例如Qemu，通过 X11 Forwarding 来打通这个壁垒。
+最近在使用 WSL 作为开发环境，但有些图形化软件无法打开，例如 Qemu，通过 X11 Forwarding 来使得 Qemu 正常显示。
 
 <!--more-->
 
