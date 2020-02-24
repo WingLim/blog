@@ -7,7 +7,7 @@ tags:
   - Netlify
 categories:
   - 网站
-urlname: hexo-netlify-cms
+slug: hexo-netlify-cms
 typora-root-url: ../
 ---
 想给 Hexo 添加一个后台管理页面，可以在浏览器上开箱即用。然后发现了JAMstack（JavaScript+APIs+Markup），通过 JavaScript 和 API 在前端直接增删改查，再触发 CI 来构建、部署。[Netlify CMS](https://www.netlifycms.org/) 就是这样一个 Serverless 的 CMS。

@@ -1,7 +1,7 @@
 ---
 title: 小米笔记本PRO折腾黑苹果记
 date: '2019-11-27 23:13:45'
-urlname: mi-book-pro-with-hackintosh
+slug: mi-book-pro-with-hackintosh
 tags:
   - hackintosh
   - xiaomi

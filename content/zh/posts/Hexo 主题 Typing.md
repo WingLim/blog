@@ -1,6 +1,6 @@
 ---
 title: Hexo 主题 Typing
-urlname: hexo-theme-typing
+slug: hexo-theme-typing
 date: '2019-11-15 21:51:31'
 updated: '2019-11-16 20:44:38'
 categories:

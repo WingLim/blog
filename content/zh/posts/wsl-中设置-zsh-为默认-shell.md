@@ -7,7 +7,7 @@ tags:
   - Linux
 categories:
   - 折腾
-urlname: wsl-use-zsh
+slug: wsl-use-zsh
 typora-root-url: ../
 ---
 最近在用 Oh My ZSH! ，然后在 WSL(Windows Subsystem for Linux)上也安装了 zsh 和 Oh My ZSH! 但是在设置默认 SHELL 时出现了问题。

@@ -1,6 +1,7 @@
 ---
 title: "在 WSL 中使用 X11 Forwarding"
 date: 2020-02-25T00:35:53+08:00
+slug: use-x11-in-wsl
 description:
 draft: false
 hideToc: false

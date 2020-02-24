@@ -1,6 +1,8 @@
 baseURL = "https://limxw.com"
 title = "二木浮生记"
 theme = "zzo"
+[permalinks]
+  posts = "/posts/:slug/"
 
 defaultContentLanguage = "en"
 hasCJKLanguage = true

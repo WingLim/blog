@@ -1,7 +1,7 @@
 ---
 title: frp 一键安装脚本
 date: '2018-12-26 19:41:22'
-urlname: frp-install-script
+slug: frp-install-script
 tags:
   - frp
   - script
