@@ -7,7 +7,7 @@ draft: false
 hideToc: false
 enableToc: true
 enableTocContent: false
-tocPosition: inner
+tocPosition: outer
 tocLevels: ["h2", "h3", "h4"]
 tags:
 - WSL
@@ -64,9 +64,9 @@ export DISPLAY=localhost:0
 
 ```bash
 # 安装 x11-apps
-sudo apt install x11-apps
+$ sudo apt install x11-apps
 # 打开 xclock
-xclock
+$ xclock
 ```
 
 若出现如下窗口则开启成功：
