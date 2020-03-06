@@ -29,7 +29,7 @@ image:
 
 ## 什么是内核模块
 
-Linux Kernel Module(LKM)即内核模块是 Linux 内核运行时加载和移除代码的机制。它们是设备驱动程序的理想选择，可以让内核不用知道硬件的工作原理即可与硬件通信。
+Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加载到内存中，无须重新编译内核。所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。
 
 内核模块和一般的 C 语言程序不同，它不使用 `main()` 函数作为入口，并且有如下区别：
 
@@ -112,7 +112,7 @@ module_exit(helloModule_exit);
 #### 汇总
 
 ```c
-// @file hello.c
+/*hello.c*/
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -235,7 +235,7 @@ Mar  6 22:59:49 AliECS kernel: [100432.211044] Goodbye LKM!
 将 `hello.c` 修改如下
 
 ```c
-// @file hello.c
+/*hello.c*/
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -300,5 +300,5 @@ root@AliECS:~/dev/kernel/hello# dmesg
 
 - [Writing a Linux Kernel Module — Part 1: Introduction](http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/)
 - [linux 下的浮点运算](http://abcdxyzk.github.io/blog/2018/01/08/kernel-fpu-1/)
-- [Bootlin v4.4](https://elixir.bootlin.com/linux/v4.4/source)
+- [Linux Device Drivers : 3rd Edition](https://book.douban.com/subject/1493443/)
 
