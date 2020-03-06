@@ -35,7 +35,6 @@ Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加
 
 - 非顺序执行：内核模块使用初始化函数来进行注册，并处理请求，初始化函数运行后就结束了。 它可以处理的请求类型在模块代码中定义。
 - 没有自动清理：内核模块申请的所有内存，必须要在模块卸载时手动释放，否则这些内存会无法使用，直到重启，也就是说我们需要在模块的卸载函数（也就是下文写到的退出函数）中，将使用的内存逐一释放。
-- 没有 `printf()` 函数：内核模块运行在有自己独立地址的内核空间，不能访问为 Linux 用户空间编写的库，但内核模块可以通过 `printk()` 函数输出信息，我们可以使用 `dmesg` 来查看这些信息。
 - 会被中断：内核模块可能会同时被多个程序/进程使用，构建内核模块时要确保发生中断时行为一致和正确。想了解更多请看：[Linux 内核的中断机制](https://www.cnblogs.com/linfeng-learning/p/9512866.html)
 - 更高级的执行特权：通常分配给内核模块的CPU周期比分配给用户空间程序的要多。编写内核模块时要小心，以免模块对系统的整体性能产生负面影响。
 - 不支持浮点：在Linux内核里无法直接进行浮点计算，因为这样做可以省去在用户态与内核态之间进行切换时保存/恢复浮点寄存器 FPU的操作。
@@ -82,6 +81,8 @@ MODULE_VERSION("0.1");              // 模块版本
 `__init` 表示该函数仅在初始化阶段使用，之后释放使用的内存资源：[init.h#L7](https://elixir.bootlin.com/linux/v4.4/source/include/linux/init.h#L7)
 
 `@return` 执行成功返回 0
+
+在内核中我们使用 `printk()` 来打印信息.。`printk()` 和 `printf()` 语法一样，但需要先定义消息类型。可用的消息类型可以到 [linux/kern_levels.h#L7-#L23](https://elixir.bootlin.com/linux/v4.4/source/include/linux/kern_levels.h#L7) 查看
 
 ```c
 static int __init helloModule_init(void){
@@ -143,11 +144,19 @@ module_exit(helloModule_exit);
 
 ```makefile
 obj-m+=hello.o
+KDIR = /lib/modules/$(shell uname -r)/build
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules
+    make -C $(KDIR) M=$(PWD) modules
 clean:
-	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) clean
+    make -C $(KDIR) M=$(PWD) clean
+```
+
+注意：`Makefile` 的基本语法如下，如果缩进不是 `<TAB>` 的话，会报错。
+
+```
+<target>: [ <dependency > ]*
+       [ <TAB> <command> <endl> ]+
 ```
 
 
