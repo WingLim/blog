@@ -19,9 +19,7 @@ categories:
 image:
 ---
 
-劫持一个系统调用，并使用自己写的调用替换
-
-通过劫持的方式，将原有系统调用替换成自定义系统调。
+通过劫持系统调用表，将原有系统调用替换成自定义系统调用。
 
 <!--more-->
 
@@ -86,35 +84,34 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 2. 通过 `/proc/kallsyms` 获取
 3. 通过暴力搜索获取
 
-### `/boot/System.map`
+
+
+前面两种方式基本一致，都是通过读取文件并过滤的方式获取。
 
 `/boot/System.map` 包含整个内核镜像的符号表。
-
-```bash
-root@AliECS:~# cat /boot/System.map-$(uname -r) | grep sys_call_table
-ffffffff81a001c0 R sys_call_table
-ffffffff81a01520 R ia32_sys_call_table
-```
-
-### `/proc/kallsyms`
 
 `/proc/kallsyms` 不仅包含内核镜像符号表，还包含所有动态加载模块的符号表。
 
 ```bash
+# /boot/System.map`
+root@AliECS:~# cat /boot/System.map-$(uname -r) | grep sys_call_table
+ffffffff81a001c0 R sys_call_table
+ffffffff81a01520 R ia32_sys_call_table
+# /proc/kallsyms`
 root@AliECS:~# cat /proc/kallsyms | grep sys_call_table
 ffffffff81a001c0 R sys_call_table
 ffffffff81a01520 R ia32_sys_call_table
 ```
 
-### 暴力搜索
-
-前面两种方法都非常简单，如果要在 LKM 中 使用的话，可以将地址写在宏定义上，再进行调用。
+如果要在 LKM 中 使用的话，可以将地址写在宏定义上，再进行调用。
 
 ```c
 #define SYS_CALL_TABLE  ffffffff81a001c0
 ```
 
 但在不同的系统上都得进行修改并重新编译，非常麻烦。
+
+### 暴力搜索
 
 前面提到  `sys_call_table` 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。
 
