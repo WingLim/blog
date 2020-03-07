@@ -2,7 +2,7 @@
 title: "Linux Kernel 实践(二)：劫持系统调用"
 date: 2020-03-06T23:17:11+08:00
 description:
-draft: false
+draft: true
 hideToc: false
 enableToc: true
 enableTocContent: false
@@ -119,7 +119,7 @@ ffffffff81a01520 R ia32_sys_call_table
 
 所以我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 `sys_call_table` 的地址，并用 `__NR_close` 索引去访问它的成员，如果这个值与 `sys_close` 的地址相同的话，就可以认为找到了 `sys_call_table` 的地址。
 
-更多有关 `PAGE_OFFSET` 的内容请看：[ARM64 Linux 内核虚拟地址空间]([https://geneblue.github.io/2017/04/02/ARM64%20Linux%20%E5%86%85%E6%A0%B8%E8%99%9A%E6%8B%9F%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4/](https://geneblue.github.io/2017/04/02/ARM64 Linux 内核虚拟地址空间/))
+更多有关 `PAGE_OFFSET` 的内容请看：[ARM64 Linux 内核虚拟地址空间](https://geneblue.github.io/2017/04/02/ARM64 Linux 内核虚拟地址空间/)
 
 下面来看搜索 `sys_call_table` 的函数：
 
@@ -216,7 +216,6 @@ unsigned long **get_sys_call_table(void)
         return entry;
       }
   }
-
   return NULL;
 }
 
@@ -234,24 +233,6 @@ void enable_write_protection(void)
   unsigned long cr0 = read_cr0();
   set_bit(16, &cr0);
   write_cr0(cr0);
-}
-static int __init init_addsyscall(void)
-{
-    disable_write_protection();
-    // 获取系统调用服务首地址
-    sys_call_table = get_sys_call_table();
-    // 保存原始系统调用的地址
-    anything_saved = (int(*)(void)) (sys_call_table[the_syscall_num]);
-    // 将原始的系统调用劫持为自定义系统调用
-    sys_call_table[the_syscall_num] = (unsigned long*)sys_setnice;
-    enable_write_protection();
-    printk("hijack syscall success\n");
-    return 0;
-}
-
-int get_prio(const struct task_struct *p)
-{
-        return p->prio - MAX_RT_PRIO;
 }
 static int __init init_addsyscall(void)
 {
