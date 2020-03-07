@@ -2,7 +2,7 @@
 title: "Linux Kernel 实践(二)：劫持系统调用"
 date: 2020-03-06T23:17:11+08:00
 description:
-draft: true
+draft: false
 hideToc: false
 enableToc: true
 enableTocContent: false
@@ -76,7 +76,7 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 };
 ```
 
-即 `sys_call_table` 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。
+即 `sys_call_table` 是一个数组，下标为系统调用号，值为系统调用函数的起始地址。
 
 ## 获取 sys_call_table 地址
 
@@ -93,11 +93,11 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 `/proc/kallsyms` 不仅包含内核镜像符号表，还包含所有动态加载模块的符号表。
 
 ```bash
-# /boot/System.map`
+# /boot/System.map
 root@AliECS:~# cat /boot/System.map-$(uname -r) | grep sys_call_table
 ffffffff81a001c0 R sys_call_table
 ffffffff81a01520 R ia32_sys_call_table
-# /proc/kallsyms`
+# /proc/kallsyms
 root@AliECS:~# cat /proc/kallsyms | grep sys_call_table
 ffffffff81a001c0 R sys_call_table
 ffffffff81a01520 R ia32_sys_call_table
@@ -113,11 +113,11 @@ ffffffff81a01520 R ia32_sys_call_table
 
 ### 暴力搜索
 
-前面提到  `sys_call_table` 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。
+前面提到  `sys_call_table` 是一个数组，下标为系统调用号，值为系统调用函数的起始地址。
 
-内核内存空间的起始地址 `PAGE_OFFSET` 变量和 `sys_close` 系统调用对我们是可见的（`sys_open ` / `sys_read`等并未导出）；系统调用号（即`sys_call_table`中的元素下标）在同一`ABI`（x86与x64属于不同ABI）中是高度后向兼容的；这个系统调用号我们也是可以直接引用的（如 `__NR_close` ）。
+内核内存空间的起始地址 `PAGE_OFFSET` 变量和 `sys_close` 系统调用在内核模块中是可见的。系统调用号在同一[ABI](https://en.wikipedia.org/wiki/Application_binary_interface)（x86与x64属于不同ABI）中是高度后向兼容的；所以我们可以直接引用系统调用号（如 `__NR_close` ）。
 
-所以我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 `sys_call_table` 的地址，并用 `__NR_close` 索引去访问它的成员，如果这个值与 `sys_close` 的地址相同的话，就可以认为找到了 `sys_call_table` 的地址。
+我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 `sys_call_table` 的地址，并用 `__NR_close` 索引去访问它的成员，如果这个值与 `sys_close` 的地址相同的话，就可以认为找到了 `sys_call_table` 的地址。
 
 更多有关 `PAGE_OFFSET` 的内容请看：[ARM64 Linux 内核虚拟地址空间](https://geneblue.github.io/2017/04/02/ARM64 Linux 内核虚拟地址空间/)
 
@@ -146,11 +146,11 @@ unsigned long **get_sys_call_table(void)
 
 ### 写保护
 
-写保护指的是写入只读内存时出错。 这个特性可以通过 [CR0](https://en.wikipedia.org/wiki/Control_register#CR0) 寄存器控制。
+当我们获取到了 `sys_call_table` 时，我们如果直接进行操作，会报错，因为在内存中有写保护，这个特性可以通过 [CR0](https://en.wikipedia.org/wiki/Control_register#CR0) 寄存器控制。
 
-CR0 的第16位比特是写保护，设置时，即使权限级别为0（Linux 有4个权限级别，从0到3，0为最高级。等级0也被称为内核模式），CPU也不能写入只读页。
+CR0 的第16位比特是写保护，设置时，即使权限级别为0（Linux 有4个权限级别，从0到3，0为最高级。等级0也被称为内核模式），也不能写入只读页。
 
-我们可以通过 [read_cr0](https://elixir.bootlin.com/linux/v4.4/ident/read_cr0) 和 [write_cr0](https://elixir.bootlin.com/linux/v4.4/ident/write_cr0) 这两个函数，可以读取和写入 CR0，同时通过 Linux 内核提供的接口 [set_bit](https://www.kernel.org/doc/htmldocs/kernel-api/API-set-bit.html) 和 [clear_bit](https://www.kernel.org/doc/htmldocs/kernel-api/API-clear-bit.html) 来操作比特。
+我们可以通过 [read_cr0](https://elixir.bootlin.com/linux/v4.4/ident/read_cr0) 和 [write_cr0](https://elixir.bootlin.com/linux/v4.4/ident/write_cr0) 这两个函数，来读取和写入 CR0，同时通过 Linux 内核提供的接口 [set_bit](https://www.kernel.org/doc/htmldocs/kernel-api/API-set-bit.html) 和 [clear_bit](https://www.kernel.org/doc/htmldocs/kernel-api/API-clear-bit.html) 来操作比特。
 
 关闭写保护，将第16个比特置为0。
 
@@ -188,13 +188,14 @@ void enable_write_protection(void)
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+// 下面这些头文件为自定义系统调用要用到的
 #include <linux/pid.h>
 #include <linux/sched.h>
 #include <linux/syscalls.h>
 #include <linux/uaccess.h>
 #include <linux/unistd.h>
 
-// 劫持 timer_gettime
+// 这里是随便挑了一个系统调用来劫持，224 为 timer_gettime
 #define the_syscall_num 224
 
 MODULE_LICENSE("GPL");
@@ -202,8 +203,9 @@ MODULE_AUTHOR("WingLim");
 MODULE_DESCRIPTION("A module to read or set nice value");
 MODULE_VERSION("0.1");
 
-asmlinkage long sys_setnice(pid_t pid, int flag, int niceval, int __user * prio, int __user * nice);
+// 用于保存 sys_call_table 地址
 unsigned long **sys_call_table;
+// 用于保存被劫持的系统调用
 static int (*anything_saved)(void);
 
 // 从内核起始地址开始搜索内存空间来获得 sys_call_table 的内存地址
@@ -219,7 +221,6 @@ unsigned long **get_sys_call_table(void)
   return NULL;
 }
 
-// 禁用写保护
 void disable_write_protection(void)
 {
   unsigned long cr0 = read_cr0();
@@ -227,27 +228,15 @@ void disable_write_protection(void)
   write_cr0(cr0);
 }
 
-// 恢复写保护
 void enable_write_protection(void)
 {
   unsigned long cr0 = read_cr0();
   set_bit(16, &cr0);
   write_cr0(cr0);
 }
-static int __init init_addsyscall(void)
-{
-    disable_write_protection();
-    // 获取系统调用服务首地址
-    sys_call_table = get_sys_call_table();
-    // 保存原始系统调用的地址
-    anything_saved = (int(*)(void)) (sys_call_table[the_syscall_num]);
-    // 将原始的系统调用劫持为自定义系统调用
-    sys_call_table[the_syscall_num] = (unsigned long*)sys_setnice;
-    enable_write_protection();
-    printk("hijack syscall success\n");
-    return 0;
-}
 
+// 这个是用来获取进程的 prio，代码来自 task_prio
+// 因为这个函数没有导出，所以拷贝一份到源码里
 int get_prio(const struct task_struct *p)
 {
         return p->prio - MAX_RT_PRIO;
@@ -281,9 +270,28 @@ asmlinkage long sys_setnice(pid_t pid, int flag, int nicevalue, int __user * pri
         return EFAULT;
 }
 
-static void __exit exit_addsyscall(void) {
+static int __init init_addsyscall(void)
+{
+    // 关闭写保护
     disable_write_protection();
+    // 获取系统调用表的地址
+    sys_call_table = get_sys_call_table();
+    // 保存原始系统调用的地址
+    anything_saved = (int(*)(void)) (sys_call_table[the_syscall_num]);
+    // 将原始的系统调用劫持为自定义系统调用
+    sys_call_table[the_syscall_num] = (unsigned long*)sys_setnice;
+    // 恢复写保护
+    enable_write_protection();
+    printk("hijack syscall success\n");
+    return 0;
+}
+
+static void __exit exit_addsyscall(void) {
+    // 关闭写保护
+    disable_write_protection();
+    // 恢复原来的系统调用
     sys_call_table[the_syscall_num] = (unsigned long*)anything_saved;
+    // 恢复写保护
     enable_write_protection();
     printk("resume syscall\n");
 }
@@ -309,6 +317,7 @@ clean:
 #### 编译模块并启用
 
 ```bash
+# 编译
 root@AliECS:~/dev/kernel/nice# make
 make -C /lib/modules/4.4.0-93-generic/build/ M=/root/dev/kernel/nice modules
 make[1]: Entering directory `/usr/src/linux-headers-4.4.0-93-generic'
@@ -318,7 +327,7 @@ make[1]: Entering directory `/usr/src/linux-headers-4.4.0-93-generic'
   CC      /root/dev/kernel/nice/nice.mod.o
   LD [M]  /root/dev/kernel/nice/nice.ko
 make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic'
-
+# 插入模块
 root@AliECS:~/dev/kernel/nice# insmod nice.ko
 ```
 
