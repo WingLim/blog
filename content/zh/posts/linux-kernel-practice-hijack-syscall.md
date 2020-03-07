@@ -76,7 +76,7 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 };
 ```
 
-即 `sys_call_table` 是一个数组，下标为系统调用号，值为系统调用函数的起始地址。
+即 `sys_call_table` 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。
 
 ## 获取 sys_call_table 地址
 
@@ -113,11 +113,9 @@ ffffffff81a01520 R ia32_sys_call_table
 
 ### 暴力搜索
 
-前面提到  `sys_call_table` 是一个数组，下标为系统调用号，值为系统调用函数的起始地址。
+前面提到  `sys_call_table` 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。
 
-内核内存空间的起始地址 `PAGE_OFFSET` 变量和 `sys_close` 系统调用在内核模块中是可见的。系统调用号在同一[ABI](https://en.wikipedia.org/wiki/Application_binary_interface)（x86与x64属于不同ABI）中是高度后向兼容的；所以我们可以直接引用系统调用号（如 `__NR_close` ）。
-
-我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 `sys_call_table` 的地址，并用 `__NR_close` 索引去访问它的成员，如果这个值与 `sys_close` 的地址相同的话，就可以认为找到了 `sys_call_table` 的地址。
+内核内存空间的起始地址 `PAGE_OFFSET` 变量和 `sys_close` 系统调用在内核模块中是可见的。系统调用号在同一[ABI](https://en.wikipedia.org/wiki/Application_binary_interface)（x86与x64属于不同ABI）中是高度后向兼容的，可以直接引用（如 `__NR_close` ）。我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 `sys_call_table` 的地址，并用 `__NR_close` 索引去访问它的成员，如果这个值与 `sys_close` 的地址相同的话，就可以认为找到了 `sys_call_table` 的地址。
 
 更多有关 `PAGE_OFFSET` 的内容请看：[ARM64 Linux 内核虚拟地址空间](https://geneblue.github.io/2017/04/02/ARM64 Linux 内核虚拟地址空间/)
 
@@ -146,7 +144,7 @@ unsigned long **get_sys_call_table(void)
 
 ### 写保护
 
-当我们获取到了 `sys_call_table` 时，我们如果直接进行操作，会报错，因为在内存中有写保护，这个特性可以通过 [CR0](https://en.wikipedia.org/wiki/Control_register#CR0) 寄存器控制。
+当我们获取到了 `sys_call_table` 的地址时，并不能直接进行操作，会报错且无法写入，因为在内存中有写保护，这个特性可以通过 [CR0](https://en.wikipedia.org/wiki/Control_register#CR0) 寄存器控制。
 
 CR0 的第16位比特是写保护，设置时，即使权限级别为0（Linux 有4个权限级别，从0到3，0为最高级。等级0也被称为内核模式），也不能写入只读页。
 
