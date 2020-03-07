@@ -1,6 +1,7 @@
 ---
 title: "Linux Kernel 实践(一)：Hello LKM"
 date: 2020-03-06T18:18:09+08:00
+slug: linux-kernel-practice-hello
 description:
 draft: false
 hideToc: false

@@ -1,6 +1,7 @@
 ---
 title: "Linux Kernel 实践(二)：劫持系统调用"
 date: 2020-03-06T23:17:11+08:00
+slug: linux-kernel-practice-hijack-syscall
 description:
 draft: false
 hideToc: false
