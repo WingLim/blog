@@ -114,6 +114,8 @@ ffffffff81a01520 R ia32_sys_call_table
 
 ### 暴力搜索
 
+**注意：在 Linux 内核 v4.17及之后 `sys_close` 就不再被导出。**
+
 前面提到  `sys_call_table` 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。
 
 内核内存空间的起始地址 `PAGE_OFFSET` 变量和 `sys_close` 系统调用在内核模块中是可见的。系统调用号在同一[ABI](https://en.wikipedia.org/wiki/Application_binary_interface)（x86与x64属于不同ABI）中是高度后向兼容的，可以直接引用（如 `__NR_close` ）。我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 `sys_call_table` 的地址，并用 `__NR_close` 索引去访问它的成员，如果这个值与 `sys_close` 的地址相同的话，就可以认为找到了 `sys_call_table` 的地址。
@@ -406,6 +408,14 @@ Mar  7 03:52:47 AliECS kernel: [118009.435485] nice value edit before：-5	edit 
 Mar  7 03:52:47 AliECS kernel: [118009.435494] nice of the process：-15
 Mar  7 03:52:47 AliECS kernel: [118009.435495] prio of the process：5
 ```
+
+
+
+## 尾语
+
+这里提到的劫持系统调用，是 RootKit 中的一部分，RootKit 是一组工具，目标是隐藏它自身存在并继续向攻击者提供系统访问。所以我们可以通过劫持系统调用来做一些更有趣的事情，比如劫持 `sys_open` 来监视文件的创建。
+
+同时，获取 `sys_call_table` 也有很多其他方式，比如 IDT（Interrupt Descriptor Table）、MSRs（Model-Specific Registers）在参考三中有它们的实现方式，总之，Linux Kernel 还挺有趣的，接下来再继续探索更多可玩的地方。
 
 
 
