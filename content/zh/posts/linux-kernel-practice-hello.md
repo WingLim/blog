@@ -164,13 +164,13 @@ clean:
 
 ```bash
 # 查看当前文件
-root@AliECS:~/dev/kernel/hello# ls -l
+root@0xDayServer:~/dev/kernel/hello# ls -l
 total 8
 -rw-r--r-- 1 root root 466 Mar  6 22:53 hello.c
 -rw-r--r-- 1 root root 154 Mar  6 22:54 Makefile
 
 # 编译
-root@AliECS:~/dev/kernel/hello# make
+root@0xDayServer:~/dev/kernel/hello# make
 make -C /lib/modules/4.4.0-93-generic/build/ M=/root/dev/kernel/hello modules
 make[1]: Entering directory `/usr/src/linux-headers-4.4.0-93-generic'
   CC [M]  /root/dev/kernel/hello/hello.o
@@ -181,7 +181,7 @@ make[1]: Entering directory `/usr/src/linux-headers-4.4.0-93-generic'
 make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic'
 
 # 编译后生成的模块文件
-root@AliECS:~/dev/kernel/hello# ls
+root@0xDayServer:~/dev/kernel/hello# ls
 hello.c  hello.ko  hello.mod.c  hello.mod.o  hello.o  Makefile  modules.order  Module.symvers
 ```
 
@@ -192,7 +192,7 @@ hello.c  hello.ko  hello.mod.c  hello.mod.o  hello.o  Makefile  modules.order  M
 ### 查看模块信息
 
 ```bash
-root@AliECS:~/dev/kernel/hello# modinfo hello.ko
+root@0xDayServer:~/dev/kernel/hello# modinfo hello.ko
 filename:       /root/dev/kernel/hello/hello.ko
 version:        0.1
 description:    A simple Linux driver to say hello.
@@ -206,8 +206,8 @@ vermagic:       4.4.0-93-generic SMP mod_unload modversions
 ### 加载模块
 
 ```bash
-root@AliECS:~/dev/kernel/hello# insmod hello.ko
-root@AliECS:~/dev/kernel/hello# lsmod
+root@0xDayServer:~/dev/kernel/hello# insmod hello.ko
+root@0xDayServer:~/dev/kernel/hello# lsmod
 Module                  Size  Used by
 hello                  16384  0 
 ```
@@ -215,7 +215,7 @@ hello                  16384  0
 ### 卸载模块
 
 ```bash
-root@AliECS:~/dev/kernel/hello# rmmod hello
+root@0xDayServer:~/dev/kernel/hello# rmmod hello
 ```
 
 
@@ -225,7 +225,7 @@ root@AliECS:~/dev/kernel/hello# rmmod hello
 1. 使用 `dmesg` 命令
 
 ```bash
-root@AliECS:~/dev/kernel/hello# dmesg
+root@0xDayServer:~/dev/kernel/hello# dmesg
 [100339.744628] Hello LKM!
 [100432.211044] Goodbye LKM!
 ```
@@ -233,9 +233,9 @@ root@AliECS:~/dev/kernel/hello# dmesg
 2. 查看内核日志
 
 ```bash
-root@AliECS:~/dev/kernel/hello# tail /var/log/kern.log
-Mar  6 22:58:16 AliECS kernel: [100339.744628] Hello LKM!
-Mar  6 22:59:49 AliECS kernel: [100432.211044] Goodbye LKM!
+root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
+Mar  6 22:58:16 0xDayServer kernel: [100339.744628] Hello LKM!
+Mar  6 22:59:49 0xDayServer kernel: [100432.211044] Goodbye LKM!
 ```
 
 
@@ -299,8 +299,8 @@ module_exit(helloModule_exit);
 ### 调用
 
 ```bash
-root@AliECS:~/dev/kernel/hello# insmod hello.ko name=World
-root@AliECS:~/dev/kernel/hello# dmesg
+root@0xDayServer:~/dev/kernel/hello# insmod hello.ko name=World
+root@0xDayServer:~/dev/kernel/hello# dmesg
 [103386.179203] Hello World!
 ```
 

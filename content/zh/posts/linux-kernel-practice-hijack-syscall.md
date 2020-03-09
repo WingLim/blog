@@ -132,11 +132,11 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 
 ```bash
 # /boot/System.map
-root@AliECS:~# cat /boot/System.map-$(uname -r) | grep sys_call_table
+root@0xDayServer:~# cat /boot/System.map-$(uname -r) | grep sys_call_table
 ffffffff81a001c0 R sys_call_table
 ffffffff81a01520 R ia32_sys_call_table
 # /proc/kallsyms
-root@AliECS:~# cat /proc/kallsyms | grep sys_call_table
+root@0xDayServer:~# cat /proc/kallsyms | grep sys_call_table
 ffffffff81a001c0 R sys_call_table
 ffffffff81a01520 R ia32_sys_call_table
 ```
@@ -356,7 +356,7 @@ clean:
 
 ```bash
 # 编译
-root@AliECS:~/dev/kernel/nice# make
+root@0xDayServer:~/dev/kernel/nice# make
 make -C /lib/modules/4.4.0-93-generic/build/ M=/root/dev/kernel/nice modules
 make[1]: Entering directory `/usr/src/linux-headers-4.4.0-93-generic'
   CC [M]  /root/dev/kernel/nice/nice.o
@@ -366,7 +366,7 @@ make[1]: Entering directory `/usr/src/linux-headers-4.4.0-93-generic'
   LD [M]  /root/dev/kernel/nice/nice.ko
 make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic'
 # 插入模块
-root@AliECS:~/dev/kernel/nice# insmod nice.ko
+root@0xDayServer:~/dev/kernel/nice# insmod nice.ko
 ```
 
 
@@ -410,9 +410,9 @@ int main() {
 
 ```bash
 # 编译 test.c
-root@AliECS:~/dev/kernel/nice# gcc test.c -o test
+root@0xDayServer:~/dev/kernel/nice# gcc test.c -o test
 # 执行
-root@AliECS:~/dev/kernel/nice# ./test
+root@0xDayServer:~/dev/kernel/nice# ./test
 pid: 12872
 prio: 20
 nice: 0
@@ -433,17 +433,17 @@ pid: 12872
 prio: 5
 nice: -15
 # 查看模块输出信息
-root@AliECS:~/dev/kernel/nice# tail /var/log/kern.log
-Mar  7 03:52:47 AliECS kernel: [118009.435431] nice of the process：0
-Mar  7 03:52:47 AliECS kernel: [118009.435434] prio of the process：20
-Mar  7 03:52:47 AliECS kernel: [118009.435466] nice value edit before：0	edit after：-5
-Mar  7 03:52:47 AliECS kernel: [118009.435475] nice of the process：-5
-Mar  7 03:52:47 AliECS kernel: [118009.435476] prio of the process：15
-Mar  7 03:52:47 AliECS kernel: [118009.435481] nice of the process：-5
-Mar  7 03:52:47 AliECS kernel: [118009.435481] prio of the process：15
-Mar  7 03:52:47 AliECS kernel: [118009.435485] nice value edit before：-5	edit after：-15
-Mar  7 03:52:47 AliECS kernel: [118009.435494] nice of the process：-15
-Mar  7 03:52:47 AliECS kernel: [118009.435495] prio of the process：5
+root@0xDayServer:~/dev/kernel/nice# tail /var/log/kern.log
+Mar  7 03:52:47 0xDayServer kernel: [118009.435431] nice of the process：0
+Mar  7 03:52:47 0xDayServer kernel: [118009.435434] prio of the process：20
+Mar  7 03:52:47 0xDayServer kernel: [118009.435466] nice value edit before：0	edit after：-5
+Mar  7 03:52:47 0xDayServer kernel: [118009.435475] nice of the process：-5
+Mar  7 03:52:47 0xDayServer kernel: [118009.435476] prio of the process：15
+Mar  7 03:52:47 0xDayServer kernel: [118009.435481] nice of the process：-5
+Mar  7 03:52:47 0xDayServer kernel: [118009.435481] prio of the process：15
+Mar  7 03:52:47 0xDayServer kernel: [118009.435485] nice value edit before：-5	edit after：-15
+Mar  7 03:52:47 0xDayServer kernel: [118009.435494] nice of the process：-15
+Mar  7 03:52:47 0xDayServer kernel: [118009.435495] prio of the process：5
 ```
 
 
