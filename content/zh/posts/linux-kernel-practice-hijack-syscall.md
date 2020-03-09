@@ -48,9 +48,9 @@ image:
 
 ## 什么是系统调用表
 
-在 Linux 中每个系统调用都有相应的系统调用号作为唯一的标识，内核维护一张系统调用表，`sys_call_table`。
+在 Linux 中每个系统调用都有相应的系统调用号作为唯一的标识，内核维护一张系统调用表：`sys_call_table`。
 
-在 64 位系统中，`sys_call_table` 定义在 [arch/x86/entry/syscall_64.c#L25](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscall_64.c#L25)
+在 64 位系统中，`sys_call_table` 的定义在 [entry/syscall_64.c#L25](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscall_64.c#L25)
 
 ```c
 asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
@@ -59,14 +59,51 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 };
 ```
 
-其中 `#include <asm/syscalls_64.h>` 为通过 [arch/x86/entry/syscalls/syscall_64.tbl](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl) 编译生成的，内容截取如下：
+其中 `#include <asm/syscalls_64.h>` 是通过 [entry/syscalls/Makefile](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/Makefile#L50) 以 [entry/syscalls/syscall_64.tbl](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl) 为源编译生成的。
+
+```makefile
+out := $(obj)/../../include/generated/asm
+syscall64 := $(srctree)/$(src)/syscall_64.tbl
+systbl := $(srctree)/$(src)/syscalltbl.sh
+$(out)/syscalls_64.h: $(syscall64) $(systbl)
+	$(call if_changed,systbl)
+```
+
+Makefile 通过 [entry/syscalls/syscalltbl.sh](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh) 将 `syscall_64.tbl` 转换成 `__SYSCALL_${abi}($nr, $entry, $compat)` 格式。
+
+```sh
+#!/bin/sh
+
+in="$1"
+out="$2"
+
+grep '^[0-9]' "$in" | sort -n | (
+    while read nr abi name entry compat; do
+	abi=`echo "$abi" | tr '[a-z]' '[A-Z]'`
+	if [ -n "$compat" ]; then
+	    echo "__SYSCALL_${abi}($nr, $entry, $compat)"
+	elif [ -n "$entry" ]; then
+	    echo "__SYSCALL_${abi}($nr, $entry, $entry)"
+	fi
+    done
+) > "$out"
+```
+
+生成后的 `syscall_64.h` 内容截取如下：
 
 ```c
 __SYSCALL_COMMON(0, sys_read, sys_read)
 __SYSCALL_COMMON(1, sys_write, sys_write)
 ```
 
-所以 `sys_call_table` 展开如下：
+再看回 `entry/syscall_64.c`：
+
+```c
+#define __SYSCALL_COMMON(nr, sym, compat) __SYSCALL_64(nr, sym, compat)
+#define __SYSCALL_64(nr, sym, compat) [nr] = sym,
+```
+
+所以可以得到 `sys_call_table` 的展开如下：
 
 ```c
 asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
@@ -77,7 +114,7 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 };
 ```
 
-即 `sys_call_table` 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。
+所以可以把 `sys_call_table` 看作一个数组，索引为系统调用号，值为系统调用函数的起始地址。
 
 ## 获取 sys_call_table 地址
 
