@@ -218,13 +218,13 @@ $ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span
 </span><span class=lnt>19
 </span><span class=lnt>20
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 查看当前文件</span>
-root@AliECS:~/dev/kernel/hello# ls -l
+root@0xDayServer:~/dev/kernel/hello# ls -l
 total <span class=m>8</span>
 -rw-r--r-- <span class=m>1</span> root root <span class=m>466</span> Mar  <span class=m>6</span> 22:53 hello.c
 -rw-r--r-- <span class=m>1</span> root root <span class=m>154</span> Mar  <span class=m>6</span> 22:54 Makefile
 
 <span class=c1># 编译</span>
-root@AliECS:~/dev/kernel/hello# make
+root@0xDayServer:~/dev/kernel/hello# make
 make -C /lib/modules/4.4.0-93-generic/build/ <span class=nv>M</span><span class=o>=</span>/root/dev/kernel/hello modules
 make<span class=o>[</span>1<span class=o>]</span>: Entering directory <span class=sb>`</span>/usr/src/linux-headers-4.4.0-93-generic<span class=s1>&#39;
 </span><span class=s1>  CC [M]  /root/dev/kernel/hello/hello.o
@@ -235,7 +235,7 @@ make<span class=o>[</span>1<span class=o>]</span>: Entering directory <span clas
 </span><span class=s1>make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic&#39;</span>
 
 <span class=c1># 编译后生成的模块文件</span>
-root@AliECS:~/dev/kernel/hello# ls
+root@0xDayServer:~/dev/kernel/hello# ls
 hello.c  hello.ko  hello.mod.c  hello.mod.o  hello.o  Makefile  modules.order  Module.symvers
 </code></pre></td></tr></table></div></div><h2 id=测试模块>测试模块</h2><h3 id=查看模块信息>查看模块信息</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
@@ -246,7 +246,7 @@ hello.c  hello.ko  hello.mod.c  hello.mod.o  hello.o  Makefile  modules.order  M
 </span><span class=lnt>7
 </span><span class=lnt>8
 </span><span class=lnt>9
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@AliECS:~/dev/kernel/hello# modinfo hello.ko
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# modinfo hello.ko
 filename:       /root/dev/kernel/hello/hello.ko
 version:        0.1
 description:    A simple Linux driver to say hello.
@@ -259,24 +259,24 @@ vermagic:       4.4.0-93-generic SMP mod_unload modversions
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@AliECS:~/dev/kernel/hello# insmod hello.ko
-root@AliECS:~/dev/kernel/hello# lsmod
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko
+root@0xDayServer:~/dev/kernel/hello# lsmod
 Module                  Size  Used by
 hello                  <span class=m>16384</span>  <span class=m>0</span> 
 </code></pre></td></tr></table></div></div><h3 id=卸载模块>卸载模块</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@AliECS:~/dev/kernel/hello# rmmod hello
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# rmmod hello
 </code></pre></td></tr></table></div></div><h3 id=查看-printk-输出信息>查看 printk() 输出信息</h3><ol><li>使用 <code>dmesg</code> 命令</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@AliECS:~/dev/kernel/hello# dmesg
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# dmesg
 <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
 <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
 </code></pre></td></tr></table></div></div><ol start=2><li>查看内核日志</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@AliECS:~/dev/kernel/hello# tail /var/log/kern.log
-Mar  <span class=m>6</span> 22:58:16 AliECS kernel: <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
-Mar  <span class=m>6</span> 22:59:49 AliECS kernel: <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
+Mar  <span class=m>6</span> 22:58:16 0xDayServer kernel: <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
+Mar  <span class=m>6</span> 22:59:49 0xDayServer kernel: <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
 </code></pre></td></tr></table></div></div><h2 id=自定义参数>自定义参数</h2><p>将 <code>hello.c</code> 修改如下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
 </span><span class=lnt> 2
 </span><span class=lnt> 3
@@ -330,8 +330,8 @@ Mar  <span class=m>6</span> 22:59:49 AliECS kernel: <span class=o>[</span>100432
 </code></pre></td></tr></table></div></div><h3 id=解析>解析</h3><h4 id=static-char-name--lkm><code>static char *name = "LKM";</code></h4><p>声明了一个全局静态字符指针变量 <code>name</code>，默认值为<code>"LKM"</code></p><p>在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 <code>static</code> 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。</p><h4 id=module_paramname-type-permissions><code>module_param(name, type, permissions)</code></h4><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125>linux/moduleparam.h#L125</a></p><p><code>name</code> 名字：向用户显示的参数名称和模块中的变量名称</p><p><code>type</code> 参数类型：byte, short, ushort, int, uint, long, ulong, charp, bool, invbool</p><p><code>permissions</code> 权限：值为 <code>0</code> 时，禁用该项，<code>0444</code> 所有人可读，<code>0644</code> root用户可写，这里的写法和文件权限一致。</p><h4 id=module_parm_desc>MODULE_PARM_DESC</h4><p>参数描述，会显示在 <code>modinfo</code> 中</p><h3 id=调用>调用</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@AliECS:~/dev/kernel/hello# insmod hello.ko <span class=nv>name</span><span class=o>=</span>World
-root@AliECS:~/dev/kernel/hello# dmesg
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko <span class=nv>name</span><span class=o>=</span>World
+root@0xDayServer:~/dev/kernel/hello# dmesg
 <span class=o>[</span>103386.179203<span class=o>]</span> Hello World!
 </code></pre></td></tr></table></div></div><h2 id=参考>参考</h2><ul><li><a href=http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/>Writing a Linux Kernel Module — Part 1: Introduction</a></li><li><a href=http://abcdxyzk.github.io/blog/2018/01/08/kernel-fpu-1/>linux 下的浮点运算</a></li><li><a href=https://book.douban.com/subject/1493443/>Linux Device Drivers : 3rd Edition</a></li></ul></article><script>'use strict';function wrap(el,wrapper){el.parentNode.insertBefore(wrapper,el);wrapper.appendChild(el);}
 (function(){var singleContentsElem=document.querySelector('.single__contents');singleContentsElem?singleContentsElem.querySelectorAll('pre > code').forEach(function(elem){var dataLang=elem.getAttribute('data-lang');var dataLangWrapper=document.createElement('div');var code=null;var codeTitle=null;if(dataLang&&dataLang.includes(':')){code=dataLang.split(':')[0];codeTitle=dataLang.split(':')[1];dataLangWrapper.className='language-'+code;dataLangWrapper.setAttribute('data-lang',codeTitle);elem.className='language-'+code;elem.setAttribute('data-lang',codeTitle);elem.setAttribute('id',codeTitle);}else if(!dataLang){dataLangWrapper.setAttribute('data-lang','Code');dataLangWrapper.className='language-code';}
