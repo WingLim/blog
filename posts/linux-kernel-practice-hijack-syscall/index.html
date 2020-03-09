@@ -101,7 +101,7 @@ originUl.parentNode.replaceChild(ul,originUl);}});</script><link rel=stylesheet 
 <a href=# class="dropdown-item select-theme__item">kimbie</a></div></div></div><a href=/about class="navbar__menu-item navbar__slide-down" dir=ltr data-ani=true>About</a>
 <a href=/archive class="navbar__menu-item navbar__slide-down" dir=ltr data-ani=true>Archive</a>
 <a href=https://wiki.limxw.com class="navbar__menu-item navbar__slide-down" dir=ltr data-ani=true>Wiki</a></div></nav><main class="single__main main"><nav class="breadcrumb hide" aria-label=breadcrumbs><script>document.querySelector('.breadcrumb').classList.remove('hide')</script><ol><li><a href=https://limxw.com/ class=capitalize>二木浮生记</a></li><li><a href=https://limxw.com/posts/ class=capitalize>Posts</a></li><li class=is-active><span>Linux Kernel 实践(二)：劫持系统调用</span></li></ol></nav><div class=single><div class=single__nojs>This page looks best with JavaScript enabled</div><script>document.querySelector('.single').classList.remove('hide');document.querySelector('.single__nojs').classList.add('hide');</script><h2 class=single__title data-ani=true>Linux Kernel 实践(二)：劫持系统调用</h2><div class=single__meta><div class=single__infos><time class=single__info title="Written At">📅&nbsp;Mar 6, 2020</time> &#183; <span class=single__info title="Reading Time">☕ 6 min read</span>
-<span class=single__info></span></div><div class="single__tags caption">🏷️<li><a href=https://limxw.com/tags/linux/ class=single__tag title=Linux>#Linux</a></li><li><a href=https://limxw.com/tags/kernel/ class=single__tag title=Kernel>#Kernel</a></li><li><a href=https://limxw.com/tags/module/ class=single__tag title=Module>#Module</a></li></div></div><article class=single__contents data-dir=ltr data-ani=true><p>通过劫持系统调用表，将原有系统调用替换成自定义系统调用。</p><div class="alert alert-info" role=alert data-dir=ltr>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</div><div class="alert alert-warning" role=alert data-dir=ltr>劫持系统调用有风险，请不要在实体机上尝试。</div><h2 id=前言>前言</h2><p>添加系统调用有两种方法</p><ul><li>修改内核源代码，并重新编译内核</li></ul><p>这种耗时耗力，比较麻烦，但是是在原有的系统调用中插入新的系统调用，不会出现冲突等问题。</p><ul><li>通过内核模块重新映射系统调用地址</li></ul><p>通过拦截系统调用表，将某个系统调用的地址修改成我们自定义的系统系统调用。</p><h2 id=什么是系统调用表>什么是系统调用表</h2><p>在 Linux 中每个系统调用都有相应的系统调用号作为唯一的标识，内核维护一张系统调用表，<code>sys_call_table</code>。</p><p>在 64 位系统中，<code>sys_call_table</code> 定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscall_64.c#L25>arch/x86/entry/syscall_64.c#L25</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<span class=single__info></span></div><div class="single__tags caption">🏷️<li><a href=https://limxw.com/tags/linux/ class=single__tag title=Linux>#Linux</a></li><li><a href=https://limxw.com/tags/kernel/ class=single__tag title=Kernel>#Kernel</a></li><li><a href=https://limxw.com/tags/module/ class=single__tag title=Module>#Module</a></li></div></div><article class=single__contents data-dir=ltr data-ani=true><p>通过劫持系统调用表，将原有系统调用替换成自定义系统调用。</p><div class="alert alert-info" role=alert data-dir=ltr>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</div><div class="alert alert-warning" role=alert data-dir=ltr>劫持系统调用有风险，请不要在实体机上尝试。</div><h2 id=前言>前言</h2><p>添加系统调用有两种方法</p><ul><li>修改内核源代码，并重新编译内核</li></ul><p>这种耗时耗力，比较麻烦，但是是在原有的系统调用中插入新的系统调用，不会出现冲突等问题。</p><ul><li>通过内核模块重新映射系统调用地址</li></ul><p>通过拦截系统调用表，将某个系统调用的地址修改成我们自定义的系统系统调用。</p><h2 id=什么是系统调用表>什么是系统调用表</h2><p>在 Linux 中每个系统调用都有相应的系统调用号作为唯一的标识，内核维护一张系统调用表：<code>sys_call_table</code>。</p><p>在 64 位系统中，<code>sys_call_table</code> 的定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscall_64.c#L25>entry/syscall_64.c#L25</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -109,11 +109,55 @@ originUl.parentNode.replaceChild(ul,originUl);}});</script><link rel=stylesheet 
 	<span class=p>[</span><span class=mi>0</span> <span class=p>...</span> <span class=n>__NR_syscall_max</span><span class=p>]</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>sys_ni_syscall</span><span class=p>,</span>
 <span class=cp>#include</span> <span class=cpf>&lt;asm/syscalls_64.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=p>};</span>
-</code></pre></td></tr></table></div></div><p>其中 <code>#include &lt;asm/syscalls_64.h></code> 为通过 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl>arch/x86/entry/syscalls/syscall_64.tbl</a> 编译生成的，内容截取如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</code></pre></td></tr></table></div></div><p>其中 <code>#include &lt;asm/syscalls_64.h></code> 是通过 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/Makefile#L50>entry/syscalls/Makefile</a> 以 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl>entry/syscalls/syscall_64.tbl</a> 为源编译生成的。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>out</span> <span class=o>:=</span> <span class=k>$(</span>obj<span class=k>)</span>/../../include/generated/asm
+<span class=nv>syscall64</span> <span class=o>:=</span> <span class=k>$(</span>srctree<span class=k>)</span>/<span class=k>$(</span>src<span class=k>)</span>/syscall_64.tbl
+<span class=nv>systbl</span> <span class=o>:=</span> <span class=k>$(</span>srctree<span class=k>)</span>/<span class=k>$(</span>src<span class=k>)</span>/syscalltbl.sh
+<span class=nf>$(out)/syscalls_64.h</span><span class=o>:</span> <span class=k>$(</span><span class=nv>syscall</span>64<span class=k>)</span> <span class=k>$(</span><span class=nv>systbl</span><span class=k>)</span>
+	<span class=k>$(</span>call if_changed,systbl<span class=k>)</span>
+</code></pre></td></tr></table></div></div><p>Makefile 通过 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh>entry/syscalls/syscalltbl.sh</a> 将 <code>syscall_64.tbl</code> 转换成 <code>__SYSCALL_${abi}($nr, $entry, $compat)</code> 格式。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sh data-lang=sh><span class=cp>#!/bin/sh
+</span><span class=cp></span>
+<span class=nv>in</span><span class=o>=</span><span class=s2>&#34;</span><span class=nv>$1</span><span class=s2>&#34;</span>
+<span class=nv>out</span><span class=o>=</span><span class=s2>&#34;</span><span class=nv>$2</span><span class=s2>&#34;</span>
+
+grep <span class=s1>&#39;^[0-9]&#39;</span> <span class=s2>&#34;</span><span class=nv>$in</span><span class=s2>&#34;</span> <span class=p>|</span> sort -n <span class=p>|</span> <span class=o>(</span>
+    <span class=k>while</span> <span class=nb>read</span> nr abi name entry compat<span class=p>;</span> <span class=k>do</span>
+	<span class=nv>abi</span><span class=o>=</span><span class=sb>`</span><span class=nb>echo</span> <span class=s2>&#34;</span><span class=nv>$abi</span><span class=s2>&#34;</span> <span class=p>|</span> tr <span class=s1>&#39;[a-z]&#39;</span> <span class=s1>&#39;[A-Z]&#39;</span><span class=sb>`</span>
+	<span class=k>if</span> <span class=o>[</span> -n <span class=s2>&#34;</span><span class=nv>$compat</span><span class=s2>&#34;</span> <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+	    <span class=nb>echo</span> <span class=s2>&#34;__SYSCALL_</span><span class=si>${</span><span class=nv>abi</span><span class=si>}</span><span class=s2>(</span><span class=nv>$nr</span><span class=s2>, </span><span class=nv>$entry</span><span class=s2>, </span><span class=nv>$compat</span><span class=s2>)&#34;</span>
+	<span class=k>elif</span> <span class=o>[</span> -n <span class=s2>&#34;</span><span class=nv>$entry</span><span class=s2>&#34;</span> <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+	    <span class=nb>echo</span> <span class=s2>&#34;__SYSCALL_</span><span class=si>${</span><span class=nv>abi</span><span class=si>}</span><span class=s2>(</span><span class=nv>$nr</span><span class=s2>, </span><span class=nv>$entry</span><span class=s2>, </span><span class=nv>$entry</span><span class=s2>)&#34;</span>
+	<span class=k>fi</span>
+    <span class=k>done</span>
+<span class=o>)</span> &gt; <span class=s2>&#34;</span><span class=nv>$out</span><span class=s2>&#34;</span>
+</code></pre></td></tr></table></div></div><p>生成后的 <code>syscall_64.h</code> 内容截取如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>__SYSCALL_COMMON</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=n>sys_read</span><span class=p>,</span> <span class=n>sys_read</span><span class=p>)</span>
 <span class=n>__SYSCALL_COMMON</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span> <span class=n>sys_write</span><span class=p>,</span> <span class=n>sys_write</span><span class=p>)</span>
-</code></pre></td></tr></table></div></div><p>所以 <code>sys_call_table</code> 展开如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</code></pre></td></tr></table></div></div><p>再看回 <code>entry/syscall_64.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#define __SYSCALL_COMMON(nr, sym, compat) __SYSCALL_64(nr, sym, compat)
+</span><span class=cp>#define __SYSCALL_64(nr, sym, compat) [nr] = sym,
+</span></code></pre></td></tr></table></div></div><p>所以可以得到 <code>sys_call_table</code> 的展开如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -125,7 +169,7 @@ originUl.parentNode.replaceChild(ul,originUl);}});</script><link rel=stylesheet 
 	<span class=p>[</span><span class=mi>1</span><span class=p>]</span> <span class=o>=</span> <span class=n>sys_write</span><span class=p>,</span>
 	<span class=p>...</span>
 <span class=p>};</span>
-</code></pre></td></tr></table></div></div><p>即 <code>sys_call_table</code> 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。</p><h2 id=获取-sys_call_table-地址>获取 sys_call_table 地址</h2><ol><li>通过 <code>/boot/System.map</code> 获取</li><li>通过 <code>/proc/kallsyms</code> 获取</li><li>通过暴力搜索获取</li></ol><p>前面两种方式基本一致，都是通过读取文件并过滤的方式获取。</p><p><code>/boot/System.map</code> 包含整个内核镜像的符号表。</p><p><code>/proc/kallsyms</code> 不仅包含内核镜像符号表，还包含所有动态加载模块的符号表。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</code></pre></td></tr></table></div></div><p>所以可以把 <code>sys_call_table</code> 看作一个数组，索引为系统调用号，值为系统调用函数的起始地址。</p><h2 id=获取-sys_call_table-地址>获取 sys_call_table 地址</h2><ol><li>通过 <code>/boot/System.map</code> 获取</li><li>通过 <code>/proc/kallsyms</code> 获取</li><li>通过暴力搜索获取</li></ol><p>前面两种方式基本一致，都是通过读取文件并过滤的方式获取。</p><p><code>/boot/System.map</code> 包含整个内核镜像的符号表。</p><p><code>/proc/kallsyms</code> 不仅包含内核镜像符号表，还包含所有动态加载模块的符号表。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
