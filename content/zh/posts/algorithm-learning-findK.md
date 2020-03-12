@@ -7,7 +7,7 @@ draft: false
 hideToc: false
 enableToc: true
 enableTocContent: false
-tocPosition: inner
+tocPosition: outer
 tocLevels: ["h2", "h3", "h4"]
 tags:
 - algorithm
@@ -17,6 +17,7 @@ series:
 categories:
 - 学习
 image:
+libraries: katex
 ---
 
 给出一个未排序的数组，在这个数组中找出第 K 大的元素。
