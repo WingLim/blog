@@ -16,7 +16,7 @@ tags:
 series:
 - Linux Kernel Practice
 categories:
-- 折腾
+- 学习
 image:
 ---
 

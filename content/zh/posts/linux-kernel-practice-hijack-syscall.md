@@ -16,7 +16,7 @@ tags:
 series:
 - Linux Kernel Practice
 categories:
-- 折腾
+- 学习
 image:
 ---
 
@@ -59,7 +59,7 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 };
 ```
 
-其中 `#include <asm/syscalls_64.h>` 是通过 [entry/syscalls/Makefile](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/Makefile#L50) 以 [entry/syscalls/syscall_64.tbl](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl) 为源编译生成的。
+其中 `#include <asm/syscalls_64.h>` 是通过 [entry/syscalls/Makefile](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/Makefile#L50) 以 [entry/syscalls/syscall_64.tbl](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl) 为源文件编译生成的。
 
 ```makefile
 out := $(obj)/../../include/generated/asm
@@ -69,7 +69,7 @@ $(out)/syscalls_64.h: $(syscall64) $(systbl)
 	$(call if_changed,systbl)
 ```
 
-Makefile 通过 [entry/syscalls/syscalltbl.sh](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh) 将 `syscall_64.tbl` 转换成 `__SYSCALL_${abi}($nr, $entry, $compat)` 格式。
+Makefile 通过 [entry/syscalls/syscalltbl.sh](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh) 将 `syscall_64.tbl` 格式化成 `__SYSCALL_${abi}($nr, $entry, $compat)` 
 
 ```sh
 #!/bin/sh
@@ -107,7 +107,7 @@ __SYSCALL_COMMON(1, sys_write, sys_write)
 
 ```c
 asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
-    
+    [0 ... __NR_syscall_max] = &sys_ni_syscall,
 	[0] = sys_read,
 	[1] = sys_write,
 	...
@@ -343,7 +343,7 @@ module_exit(exit_addsyscall);
 #### 添加 `Makefile`
 
 ```makefile
-obj-m+=hello.o
+obj-m+=nice.o
 KDIR = /lib/modules/$(shell uname -r)/build
 
 all:
