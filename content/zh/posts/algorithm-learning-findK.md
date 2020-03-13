@@ -28,7 +28,7 @@ libraries: katex
 
 ### 挑选基准值
 
-从数组中挑出一个元素作为基准，这里选择数列中第一个元素作为基准。
+从数组中挑出一个元素作为基准，这里选择数组中第一个元素作为基准。
 
 ### 分割
 
@@ -61,7 +61,7 @@ def partition(s, low, high):
     return j
 
 def findK(s, start, end, k):
-    i = partition2(s, start, end)
+    i = partition(s, start, end)
     if i == k-1:
         return s[k-1]
     elif i > k-1:
