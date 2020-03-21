@@ -11,7 +11,13 @@
   weight = 2
 
 [[main]]
+  identifier = "showcase"
+  name = "Showcase"
+  url = "showcase"
+  weight = 3
+
+[[main]]
   identifier = "wiki"
   name = "Wiki"
   url = "https://wiki.limxw.com"
-  weight = 3
+  weight = 4
