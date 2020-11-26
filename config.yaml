@@ -1,0 +1,25 @@
+title: "Lim's Blog"
+languageCode: "zh-cn"
+theme: "hugo-tania"
+
+params:
+  titleEmoji: '😎'
+  socialOptions:
+    github: https://github.com/WingLim
+    twitter: https://twitter.com/WingLims
+
+menu:
+  header:
+    - name: Articles
+      url: "/articles/"
+  footer:
+    - name: RSS
+      url: "/index.xml"
+
+markup:
+  highlight:
+    noClasses: false
+    lineNos: true
+  goldmark:
+    renderer:
+      unsafe: true
