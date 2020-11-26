@@ -1,0 +1,546 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Linux Kernel 实践(二)：劫持系统调用 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.14967ba2ef1bc4295b0586f1b2b13b4bae44300f5973bfb61b5c52c844f54ab6.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
+<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Linux Kernel 实践(二)：劫持系统调用</h1><div class=post-meta><div>By on <time>March 06, 2020</time></div><div class=tags><a href=/tags/kernel/>Kernel</a>
+<a href=/tags/linux/>Linux</a>
+<a href=/tags/module/>Module</a></div></div></div></div></header></article><div class=article-post><p>通过劫持系统调用表，将原有系统调用替换成自定义系统调用。</p><p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</p><p>劫持系统调用有风险，请不要在实体机上尝试。</p><h2 id=前言>前言</h2><p>添加系统调用有两种方法</p><ul><li>修改内核源代码，并重新编译内核</li></ul><p>这种耗时耗力，比较麻烦，但是是在原有的系统调用中插入新的系统调用，不会出现冲突等问题。</p><ul><li>通过内核模块重新映射系统调用地址</li></ul><p>通过拦截系统调用表，将某个系统调用的地址修改成我们自定义的系统系统调用。</p><h2 id=什么是系统调用表>什么是系统调用表</h2><p>在 Linux 中每个系统调用都有相应的系统调用号作为唯一的标识，内核维护一张系统调用表：<code>sys_call_table</code>。</p><p>在 64 位系统中，<code>sys_call_table</code> 的定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscall_64.c#L25>entry/syscall_64.c#L25</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>asmlinkage</span> <span class=k>const</span> <span class=n>sys_call_ptr_t</span> <span class=n>sys_call_table</span><span class=p>[</span><span class=n>__NR_syscall_max</span><span class=o>+</span><span class=mi>1</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span>
+	<span class=p>[</span><span class=mi>0</span> <span class=p>...</span> <span class=n>__NR_syscall_max</span><span class=p>]</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>sys_ni_syscall</span><span class=p>,</span>
+<span class=cp>#include</span> <span class=cpf>&lt;asm/syscalls_64.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=p>};</span>
+</code></pre></td></tr></table></div></div><p>其中 <code>#include &lt;asm/syscalls_64.h></code> 是通过 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/Makefile#L50>entry/syscalls/Makefile</a> 以 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl>entry/syscalls/syscall_64.tbl</a> 为源文件编译生成的。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>out</span> <span class=o>:=</span> <span class=k>$(</span>obj<span class=k>)</span>/../../include/generated/asm
+<span class=nv>syscall64</span> <span class=o>:=</span> <span class=k>$(</span>srctree<span class=k>)</span>/<span class=k>$(</span>src<span class=k>)</span>/syscall_64.tbl
+<span class=nv>systbl</span> <span class=o>:=</span> <span class=k>$(</span>srctree<span class=k>)</span>/<span class=k>$(</span>src<span class=k>)</span>/syscalltbl.sh
+<span class=nf>$(out)/syscalls_64.h</span><span class=o>:</span> <span class=k>$(</span><span class=nv>syscall</span>64<span class=k>)</span> <span class=k>$(</span><span class=nv>systbl</span><span class=k>)</span>
+	<span class=k>$(</span>call if_changed,systbl<span class=k>)</span>
+</code></pre></td></tr></table></div></div><p>Makefile 通过 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh>entry/syscalls/syscalltbl.sh</a> 将 <code>syscall_64.tbl</code> 格式化成 <code>__SYSCALL_${abi}($nr, $entry, $compat)</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sh data-lang=sh><span class=cp>#!/bin/sh
+</span><span class=cp></span>
+<span class=nv>in</span><span class=o>=</span><span class=s2>&#34;</span><span class=nv>$1</span><span class=s2>&#34;</span>
+<span class=nv>out</span><span class=o>=</span><span class=s2>&#34;</span><span class=nv>$2</span><span class=s2>&#34;</span>
+
+grep <span class=s1>&#39;^[0-9]&#39;</span> <span class=s2>&#34;</span><span class=nv>$in</span><span class=s2>&#34;</span> <span class=p>|</span> sort -n <span class=p>|</span> <span class=o>(</span>
+    <span class=k>while</span> <span class=nb>read</span> nr abi name entry compat<span class=p>;</span> <span class=k>do</span>
+	<span class=nv>abi</span><span class=o>=</span><span class=sb>`</span><span class=nb>echo</span> <span class=s2>&#34;</span><span class=nv>$abi</span><span class=s2>&#34;</span> <span class=p>|</span> tr <span class=s1>&#39;[a-z]&#39;</span> <span class=s1>&#39;[A-Z]&#39;</span><span class=sb>`</span>
+	<span class=k>if</span> <span class=o>[</span> -n <span class=s2>&#34;</span><span class=nv>$compat</span><span class=s2>&#34;</span> <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+	    <span class=nb>echo</span> <span class=s2>&#34;__SYSCALL_</span><span class=si>${</span><span class=nv>abi</span><span class=si>}</span><span class=s2>(</span><span class=nv>$nr</span><span class=s2>, </span><span class=nv>$entry</span><span class=s2>, </span><span class=nv>$compat</span><span class=s2>)&#34;</span>
+	<span class=k>elif</span> <span class=o>[</span> -n <span class=s2>&#34;</span><span class=nv>$entry</span><span class=s2>&#34;</span> <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+	    <span class=nb>echo</span> <span class=s2>&#34;__SYSCALL_</span><span class=si>${</span><span class=nv>abi</span><span class=si>}</span><span class=s2>(</span><span class=nv>$nr</span><span class=s2>, </span><span class=nv>$entry</span><span class=s2>, </span><span class=nv>$entry</span><span class=s2>)&#34;</span>
+	<span class=k>fi</span>
+    <span class=k>done</span>
+<span class=o>)</span> &gt; <span class=s2>&#34;</span><span class=nv>$out</span><span class=s2>&#34;</span>
+</code></pre></td></tr></table></div></div><p>生成后的 <code>syscall_64.h</code> 内容截取如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>__SYSCALL_COMMON</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=n>sys_read</span><span class=p>,</span> <span class=n>sys_read</span><span class=p>)</span>
+<span class=n>__SYSCALL_COMMON</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span> <span class=n>sys_write</span><span class=p>,</span> <span class=n>sys_write</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><p>再看回 <code>entry/syscall_64.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#define __SYSCALL_COMMON(nr, sym, compat) __SYSCALL_64(nr, sym, compat)
+</span><span class=cp>#define __SYSCALL_64(nr, sym, compat) [nr] = sym,
+</span></code></pre></td></tr></table></div></div><p>所以可以得到 <code>sys_call_table</code> 的展开如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>asmlinkage</span> <span class=k>const</span> <span class=n>sys_call_ptr_t</span> <span class=n>sys_call_table</span><span class=p>[</span><span class=n>__NR_syscall_max</span><span class=o>+</span><span class=mi>1</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span>
+    <span class=p>[</span><span class=mi>0</span> <span class=p>...</span> <span class=n>__NR_syscall_max</span><span class=p>]</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>sys_ni_syscall</span><span class=p>,</span>
+	<span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>=</span> <span class=n>sys_read</span><span class=p>,</span>
+	<span class=p>[</span><span class=mi>1</span><span class=p>]</span> <span class=o>=</span> <span class=n>sys_write</span><span class=p>,</span>
+	<span class=p>...</span>
+<span class=p>};</span>
+</code></pre></td></tr></table></div></div><p>所以可以把 <code>sys_call_table</code> 看作一个数组，索引为系统调用号，值为系统调用函数的起始地址。</p><h2 id=获取-sys_call_table-地址>获取 sys_call_table 地址</h2><ol><li>通过 <code>/boot/System.map</code> 获取</li><li>通过 <code>/proc/kallsyms</code> 获取</li><li>通过暴力搜索获取</li></ol><p>前面两种方式基本一致，都是通过读取文件并过滤的方式获取。</p><p><code>/boot/System.map</code> 包含整个内核镜像的符号表。</p><p><code>/proc/kallsyms</code> 不仅包含内核镜像符号表，还包含所有动态加载模块的符号表。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># /boot/System.map</span>
+root@0xDayServer:~# cat /boot/System.map-<span class=k>$(</span>uname -r<span class=k>)</span> <span class=p>|</span> grep sys_call_table
+ffffffff81a001c0 R sys_call_table
+ffffffff81a01520 R ia32_sys_call_table
+<span class=c1># /proc/kallsyms</span>
+root@0xDayServer:~# cat /proc/kallsyms <span class=p>|</span> grep sys_call_table
+ffffffff81a001c0 R sys_call_table
+ffffffff81a01520 R ia32_sys_call_table
+</code></pre></td></tr></table></div></div><p>如果要在 LKM 中 使用的话，可以将地址写在宏定义上，再进行调用。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#define SYS_CALL_TABLE  ffffffff81a001c0
+</span></code></pre></td></tr></table></div></div><p>但在不同的系统上都得进行修改并重新编译，非常麻烦。</p><h3 id=暴力搜索>暴力搜索</h3><p><strong>注意：在 Linux 内核 v4.17及之后 <code>sys_close</code> 就不再被导出。</strong></p><p>前面提到 <code>sys_call_table</code> 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。</p><p>内核内存空间的起始地址 <code>PAGE_OFFSET</code> 变量和 <code>sys_close</code> 系统调用在内核模块中是可见的。系统调用号在同一<a href=https://en.wikipedia.org/wiki/Application_binary_interface>ABI</a>（x86与x64属于不同ABI）中是高度后向兼容的，可以直接引用（如 <code>__NR_close</code> ）。我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 <code>sys_call_table</code> 的地址，并用 <code>__NR_close</code> 索引去访问它的成员，如果这个值与 <code>sys_close</code> 的地址相同的话，就可以认为找到了 <code>sys_call_table</code> 的地址。</p><p>更多有关 <code>PAGE_OFFSET</code> 的内容请看：[ARM64 Linux 内核虚拟地址空间](<a href=https://geneblue.github.io/2017/04/02/ARM64>https://geneblue.github.io/2017/04/02/ARM64</a> Linux 内核虚拟地址空间/)</p><p>下面来看搜索 <code>sys_call_table</code> 的函数：</p><p><code>ULONG_MAX</code> 为 0xFFFFFFFFUL，即 <code>unsigned long</code> 的最大值</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>**</span><span class=nf>get_sys_call_table</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+<span class=p>{</span>
+  <span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>**</span><span class=n>entry</span> <span class=o>=</span> <span class=p>(</span><span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>**</span><span class=p>)</span><span class=n>PAGE_OFFSET</span><span class=p>;</span>
+
+  <span class=k>for</span> <span class=p>(;(</span><span class=kt>unsigned</span> <span class=kt>long</span><span class=p>)</span><span class=n>entry</span> <span class=o>&lt;</span> <span class=n>ULONG_MAX</span><span class=p>;</span> <span class=n>entry</span> <span class=o>+=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>entry</span><span class=p>[</span><span class=n>__NR_close</span><span class=p>]</span> <span class=o>==</span> <span class=p>(</span><span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>*</span><span class=p>)</span><span class=n>sys_close</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=n>entry</span><span class=p>;</span>
+      <span class=p>}</span>
+  <span class=p>}</span>
+
+  <span class=k>return</span> <span class=nb>NULL</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><h2 id=劫持系统调用>劫持系统调用</h2><h3 id=写保护>写保护</h3><p>当我们获取到了 <code>sys_call_table</code> 的地址时，并不能直接进行操作，会报错且无法写入，因为在内存中有写保护，这个特性可以通过 <a href=https://en.wikipedia.org/wiki/Control_register#CR0>CR0</a> 寄存器控制。</p><p>CR0 的第16位比特是写保护，设置时，即使权限级别为0（Linux 有4个权限级别，从0到3，0为最高级。等级0也被称为内核模式），也不能写入只读页。</p><p>我们可以通过 <a href=https://elixir.bootlin.com/linux/v4.4/ident/read_cr0>read_cr0</a> 和 <a href=https://elixir.bootlin.com/linux/v4.4/ident/write_cr0>write_cr0</a> 这两个函数，来读取和写入 CR0，同时通过 Linux 内核提供的接口 <a href=https://www.kernel.org/doc/htmldocs/kernel-api/API-set-bit.html>set_bit</a> 和 <a href=https://www.kernel.org/doc/htmldocs/kernel-api/API-clear-bit.html>clear_bit</a> 来操作比特。</p><p>关闭写保护，将第16个比特置为0。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span> <span class=nf>disable_write_protection</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+<span class=p>{</span>
+  <span class=kt>unsigned</span> <span class=kt>long</span> <span class=n>cr0</span> <span class=o>=</span> <span class=n>read_cr0</span><span class=p>();</span>
+  <span class=n>clear_bit</span><span class=p>(</span><span class=mi>16</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>cr0</span><span class=p>);</span>
+  <span class=n>write_cr0</span><span class=p>(</span><span class=n>cr0</span><span class=p>);</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>开启写保护，将第16个比特置为1。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span> <span class=nf>enable_write_protection</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+<span class=p>{</span>
+  <span class=kt>unsigned</span> <span class=kt>long</span> <span class=n>cr0</span> <span class=o>=</span> <span class=n>read_cr0</span><span class=p>();</span>
+  <span class=n>set_bit</span><span class=p>(</span><span class=mi>16</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>cr0</span><span class=p>);</span>
+  <span class=n>write_cr0</span><span class=p>(</span><span class=n>cr0</span><span class=p>);</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><h3 id=模块代码>模块代码</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/**
+</span><span class=cm> * @file    nice.c
+</span><span class=cm> * @author  WingLim
+</span><span class=cm> * @date    2020-03-05
+</span><span class=cm> * @version 0.1
+</span><span class=cm> * @brief  读取及修改一个进程的 nice 值，并返回最新的 nice 值及优先级 prio 的模块化实现
+</span><span class=cm>*/</span>
+
+<span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=c1>// 下面这些头文件为自定义系统调用要用到的
+</span><span class=c1></span><span class=cp>#include</span> <span class=cpf>&lt;linux/pid.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/sched.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/syscalls.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/uaccess.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=c1>// 这里是随便挑了一个系统调用来劫持，224 为 timer_gettime
+</span><span class=c1></span><span class=cp>#define the_syscall_num 224
+</span><span class=cp></span>
+<span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>
+<span class=n>MODULE_AUTHOR</span><span class=p>(</span><span class=s>&#34;WingLim&#34;</span><span class=p>);</span>
+<span class=n>MODULE_DESCRIPTION</span><span class=p>(</span><span class=s>&#34;A module to read or set nice value&#34;</span><span class=p>);</span>
+<span class=n>MODULE_VERSION</span><span class=p>(</span><span class=s>&#34;0.1&#34;</span><span class=p>);</span>
+
+<span class=c1>// 用于保存 sys_call_table 地址
+</span><span class=c1></span><span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>**</span><span class=n>sys_call_table</span><span class=p>;</span>
+<span class=c1>// 用于保存被劫持的系统调用
+</span><span class=c1></span><span class=k>static</span> <span class=nf>int</span> <span class=p>(</span><span class=o>*</span><span class=n>anything_saved</span><span class=p>)(</span><span class=kt>void</span><span class=p>);</span>
+
+<span class=c1>// 从内核起始地址开始搜索内存空间来获得 sys_call_table 的内存地址
+</span><span class=c1></span><span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>**</span><span class=nf>get_sys_call_table</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+<span class=p>{</span>
+  <span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>**</span><span class=n>entry</span> <span class=o>=</span> <span class=p>(</span><span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>**</span><span class=p>)</span><span class=n>PAGE_OFFSET</span><span class=p>;</span>
+
+  <span class=k>for</span> <span class=p>(;(</span><span class=kt>unsigned</span> <span class=kt>long</span><span class=p>)</span><span class=n>entry</span> <span class=o>&lt;</span> <span class=n>ULONG_MAX</span><span class=p>;</span> <span class=n>entry</span> <span class=o>+=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>entry</span><span class=p>[</span><span class=n>__NR_close</span><span class=p>]</span> <span class=o>==</span> <span class=p>(</span><span class=kt>unsigned</span> <span class=kt>long</span> <span class=o>*</span><span class=p>)</span><span class=n>sys_close</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=n>entry</span><span class=p>;</span>
+      <span class=p>}</span>
+  <span class=p>}</span>
+  <span class=k>return</span> <span class=nb>NULL</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>disable_write_protection</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+<span class=p>{</span>
+  <span class=kt>unsigned</span> <span class=kt>long</span> <span class=n>cr0</span> <span class=o>=</span> <span class=n>read_cr0</span><span class=p>();</span>
+  <span class=n>clear_bit</span><span class=p>(</span><span class=mi>16</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>cr0</span><span class=p>);</span>
+  <span class=n>write_cr0</span><span class=p>(</span><span class=n>cr0</span><span class=p>);</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>enable_write_protection</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+<span class=p>{</span>
+  <span class=kt>unsigned</span> <span class=kt>long</span> <span class=n>cr0</span> <span class=o>=</span> <span class=n>read_cr0</span><span class=p>();</span>
+  <span class=n>set_bit</span><span class=p>(</span><span class=mi>16</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>cr0</span><span class=p>);</span>
+  <span class=n>write_cr0</span><span class=p>(</span><span class=n>cr0</span><span class=p>);</span>
+<span class=p>}</span>
+
+<span class=c1>// 这个是用来获取进程的 prio，代码来自 task_prio
+</span><span class=c1>// 因为这个函数没有导出，所以拷贝一份到源码里
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>get_prio</span><span class=p>(</span><span class=k>const</span> <span class=k>struct</span> <span class=n>task_struct</span> <span class=o>*</span><span class=n>p</span><span class=p>)</span>
+<span class=p>{</span>
+        <span class=k>return</span> <span class=n>p</span><span class=o>-&gt;</span><span class=n>prio</span> <span class=o>-</span> <span class=n>MAX_RT_PRIO</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>asmlinkage</span> <span class=kt>long</span> <span class=nf>sys_setnice</span><span class=p>(</span><span class=n>pid_t</span> <span class=n>pid</span><span class=p>,</span> <span class=kt>int</span> <span class=n>flag</span><span class=p>,</span> <span class=kt>int</span> <span class=n>nicevalue</span><span class=p>,</span> <span class=kt>int</span> <span class=n>__user</span> <span class=o>*</span> <span class=n>prio</span><span class=p>,</span> <span class=kt>int</span> <span class=n>__user</span> <span class=o>*</span> <span class=n>nice</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=k>struct</span> <span class=n>pid</span> <span class=o>*</span> <span class=n>kpid</span><span class=p>;</span>
+        <span class=k>struct</span> <span class=n>task_struct</span> <span class=o>*</span> <span class=n>task</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>nicebef</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>priobef</span><span class=p>;</span>
+        <span class=n>kpid</span> <span class=o>=</span> <span class=n>find_get_pid</span><span class=p>(</span><span class=n>pid</span><span class=p>);</span> <span class=c1>// 获取 pid
+</span><span class=c1></span>        <span class=n>task</span> <span class=o>=</span> <span class=n>pid_task</span><span class=p>(</span><span class=n>kpid</span><span class=p>,</span> <span class=n>PIDTYPE_PID</span><span class=p>);</span> <span class=c1>// 返回 task_struct
+</span><span class=c1></span>        <span class=n>nicebef</span> <span class=o>=</span> <span class=n>task_nice</span><span class=p>(</span><span class=n>task</span><span class=p>);</span> <span class=c1>// 获取进程当前 nice 值
+</span><span class=c1></span>    <span class=n>priobef</span> <span class=o>=</span> <span class=n>get_prio</span><span class=p>(</span><span class=n>task</span><span class=p>);</span> <span class=c1>// 获取进程当前 prio 值
+</span><span class=c1></span>
+        <span class=k>if</span><span class=p>(</span><span class=n>flag</span> <span class=o>==</span> <span class=mi>1</span><span class=p>){</span>
+                <span class=n>set_user_nice</span><span class=p>(</span><span class=n>task</span><span class=p>,</span> <span class=n>nicevalue</span><span class=p>);</span>
+                <span class=n>printk</span><span class=p>(</span><span class=s>&#34;nice value edit before：%d</span><span class=se>\t</span><span class=s>edit after：%d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>nicebef</span><span class=p>,</span> <span class=n>nicevalue</span><span class=p>);</span>
+                <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>else</span> <span class=k>if</span><span class=p>(</span><span class=n>flag</span> <span class=o>==</span> <span class=mi>0</span><span class=p>){</span>
+                <span class=n>copy_to_user</span><span class=p>(</span><span class=n>nice</span><span class=p>,</span> <span class=p>(</span><span class=k>const</span> <span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>nicebef</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>nicebef</span><span class=p>));</span>
+                <span class=n>copy_to_user</span><span class=p>(</span><span class=n>prio</span><span class=p>,</span> <span class=p>(</span><span class=k>const</span> <span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>priobef</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>priobef</span><span class=p>));</span>
+                <span class=n>printk</span><span class=p>(</span><span class=s>&#34;nice of the process：%d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>nicebef</span><span class=p>);</span>
+                <span class=n>printk</span><span class=p>(</span><span class=s>&#34;prio of the process：%d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>priobef</span><span class=p>);</span>
+                <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=p>}</span>
+
+        <span class=n>printk</span><span class=p>(</span><span class=s>&#34;the flag is undefined!</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
+        <span class=k>return</span> <span class=n>EFAULT</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=k>static</span> <span class=kt>int</span> <span class=n>__init</span> <span class=nf>init_addsyscall</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// 关闭写保护
+</span><span class=c1></span>    <span class=n>disable_write_protection</span><span class=p>();</span>
+    <span class=c1>// 获取系统调用表的地址
+</span><span class=c1></span>    <span class=n>sys_call_table</span> <span class=o>=</span> <span class=n>get_sys_call_table</span><span class=p>();</span>
+    <span class=c1>// 保存原始系统调用的地址
+</span><span class=c1></span>    <span class=n>anything_saved</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=p>(</span><span class=o>*</span><span class=p>)(</span><span class=kt>void</span><span class=p>))</span> <span class=p>(</span><span class=n>sys_call_table</span><span class=p>[</span><span class=n>the_syscall_num</span><span class=p>]);</span>
+    <span class=c1>// 将原始的系统调用劫持为自定义系统调用
+</span><span class=c1></span>    <span class=n>sys_call_table</span><span class=p>[</span><span class=n>the_syscall_num</span><span class=p>]</span> <span class=o>=</span> <span class=p>(</span><span class=kt>unsigned</span> <span class=kt>long</span><span class=o>*</span><span class=p>)</span><span class=n>sys_setnice</span><span class=p>;</span>
+    <span class=c1>// 恢复写保护
+</span><span class=c1></span>    <span class=n>enable_write_protection</span><span class=p>();</span>
+    <span class=n>printk</span><span class=p>(</span><span class=s>&#34;hijack syscall success</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=k>static</span> <span class=kt>void</span> <span class=n>__exit</span> <span class=nf>exit_addsyscall</span><span class=p>(</span><span class=kt>void</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 关闭写保护
+</span><span class=c1></span>    <span class=n>disable_write_protection</span><span class=p>();</span>
+    <span class=c1>// 恢复原来的系统调用
+</span><span class=c1></span>    <span class=n>sys_call_table</span><span class=p>[</span><span class=n>the_syscall_num</span><span class=p>]</span> <span class=o>=</span> <span class=p>(</span><span class=kt>unsigned</span> <span class=kt>long</span><span class=o>*</span><span class=p>)</span><span class=n>anything_saved</span><span class=p>;</span>
+    <span class=c1>// 恢复写保护
+</span><span class=c1></span>    <span class=n>enable_write_protection</span><span class=p>();</span>
+    <span class=n>printk</span><span class=p>(</span><span class=s>&#34;resume syscall</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
+<span class=p>}</span>
+
+<span class=n>module_init</span><span class=p>(</span><span class=n>init_addsyscall</span><span class=p>);</span>
+<span class=n>module_exit</span><span class=p>(</span><span class=n>exit_addsyscall</span><span class=p>);</span>
+</code></pre></td></tr></table></div></div><h4 id=添加-makefile>添加 <code>Makefile</code></h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>obj-m</span><span class=o>+=</span>nice.o
+<span class=nv>KDIR</span> <span class=o>=</span> /lib/modules/<span class=k>$(</span>shell uname -r<span class=k>)</span>/build
+
+<span class=nf>all</span><span class=o>:</span>
+    make -C <span class=k>$(</span>KDIR<span class=k>)</span> <span class=nv>M</span><span class=o>=</span><span class=k>$(</span>PWD<span class=k>)</span> modules
+<span class=nf>clean</span><span class=o>:</span>
+    make -C <span class=k>$(</span>KDIR<span class=k>)</span> <span class=nv>M</span><span class=o>=</span><span class=k>$(</span>PWD<span class=k>)</span> clean
+</code></pre></td></tr></table></div></div><h4 id=编译模块并启用>编译模块并启用</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 编译</span>
+root@0xDayServer:~/dev/kernel/nice# make
+make -C /lib/modules/4.4.0-93-generic/build/ <span class=nv>M</span><span class=o>=</span>/root/dev/kernel/nice modules
+make<span class=o>[</span>1<span class=o>]</span>: Entering directory <span class=sb>`</span>/usr/src/linux-headers-4.4.0-93-generic<span class=s1>&#39;
+</span><span class=s1>  CC [M]  /root/dev/kernel/nice/nice.o
+</span><span class=s1>  Building modules, stage 2.
+</span><span class=s1>  MODPOST 1 modules
+</span><span class=s1>  CC      /root/dev/kernel/nice/nice.mod.o
+</span><span class=s1>  LD [M]  /root/dev/kernel/nice/nice.ko
+</span><span class=s1>make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic&#39;</span>
+<span class=c1># 插入模块</span>
+root@0xDayServer:~/dev/kernel/nice# insmod nice.ko
+</code></pre></td></tr></table></div></div><h4 id=模块测试代码>模块测试代码</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*test.c*/</span>
+<span class=cp>#define _GNU_SOURCE
+</span><span class=cp>#include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;sys/syscall.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp>#define __NR_mysetnice 224 </span><span class=c1>//系统调用号
+</span><span class=c1></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+    <span class=n>pid_t</span> <span class=n>tid</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>nicevalue</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>prio</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>nice</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=n>tid</span> <span class=o>=</span> <span class=n>getpid</span><span class=p>();</span>
+    <span class=n>syscall</span><span class=p>(</span><span class=n>__NR_mysetnice</span><span class=p>,</span><span class=n>tid</span><span class=p>,</span><span class=mi>0</span><span class=p>,</span><span class=o>-</span><span class=mi>5</span><span class=p>,</span><span class=o>&amp;</span><span class=n>prio</span><span class=p>,</span><span class=o>&amp;</span><span class=n>nice</span><span class=p>);</span><span class=c1>//read
+</span><span class=c1></span>    <span class=n>printf</span><span class=p>(</span><span class=s>&#34;pid: %d</span><span class=se>\n</span><span class=s>prio: %d</span><span class=se>\n</span><span class=s>nice: %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>tid</span><span class=p>,</span> <span class=n>prio</span><span class=p>,</span><span class=n>nice</span><span class=p>);</span>
+    <span class=n>syscall</span><span class=p>(</span><span class=n>__NR_mysetnice</span><span class=p>,</span><span class=n>tid</span><span class=p>,</span><span class=mi>1</span><span class=p>,</span><span class=o>-</span><span class=mi>5</span><span class=p>,</span><span class=o>&amp;</span><span class=n>prio</span><span class=p>,</span><span class=o>&amp;</span><span class=n>nice</span><span class=p>);</span><span class=c1>//set
+</span><span class=c1></span>    <span class=n>printf</span><span class=p>(</span><span class=s>&#34;pid: %d</span><span class=se>\n</span><span class=s>prio: %d</span><span class=se>\n</span><span class=s>nice: %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>tid</span><span class=p>,</span> <span class=n>prio</span><span class=p>,</span><span class=n>nice</span><span class=p>);</span>
+    <span class=n>syscall</span><span class=p>(</span><span class=n>__NR_mysetnice</span><span class=p>,</span><span class=n>tid</span><span class=p>,</span><span class=mi>0</span><span class=p>,</span><span class=o>-</span><span class=mi>5</span><span class=p>,</span><span class=o>&amp;</span><span class=n>prio</span><span class=p>,</span><span class=o>&amp;</span><span class=n>nice</span><span class=p>);</span><span class=c1>//read
+</span><span class=c1></span>    <span class=n>printf</span><span class=p>(</span><span class=s>&#34;pid: %d</span><span class=se>\n</span><span class=s>prio: %d</span><span class=se>\n</span><span class=s>nice: %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>tid</span><span class=p>,</span> <span class=n>prio</span><span class=p>,</span><span class=n>nice</span><span class=p>);</span>
+    <span class=n>printf</span><span class=p>(</span><span class=s>&#34;*******************************</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
+    <span class=n>syscall</span><span class=p>(</span><span class=n>__NR_mysetnice</span><span class=p>,</span><span class=n>tid</span><span class=p>,</span><span class=mi>0</span><span class=p>,</span><span class=o>-</span><span class=mi>15</span><span class=p>,</span><span class=o>&amp;</span><span class=n>prio</span><span class=p>,</span><span class=o>&amp;</span><span class=n>nice</span><span class=p>);</span><span class=c1>//read
+</span><span class=c1></span>    <span class=n>printf</span><span class=p>(</span><span class=s>&#34;pid: %d</span><span class=se>\n</span><span class=s>prio: %d</span><span class=se>\n</span><span class=s>nice: %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>tid</span><span class=p>,</span> <span class=n>prio</span><span class=p>,</span><span class=n>nice</span><span class=p>);</span>
+    <span class=n>syscall</span><span class=p>(</span><span class=n>__NR_mysetnice</span><span class=p>,</span><span class=n>tid</span><span class=p>,</span><span class=mi>1</span><span class=p>,</span><span class=o>-</span><span class=mi>15</span><span class=p>,</span><span class=o>&amp;</span><span class=n>prio</span><span class=p>,</span><span class=o>&amp;</span><span class=n>nice</span><span class=p>);</span><span class=c1>//set
+</span><span class=c1></span>    <span class=n>printf</span><span class=p>(</span><span class=s>&#34;pid: %d</span><span class=se>\n</span><span class=s>prio: %d</span><span class=se>\n</span><span class=s>nice: %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>tid</span><span class=p>,</span> <span class=n>prio</span><span class=p>,</span><span class=n>nice</span><span class=p>);</span>
+    <span class=n>syscall</span><span class=p>(</span><span class=n>__NR_mysetnice</span><span class=p>,</span><span class=n>tid</span><span class=p>,</span><span class=mi>0</span><span class=p>,</span><span class=o>-</span><span class=mi>15</span><span class=p>,</span><span class=o>&amp;</span><span class=n>prio</span><span class=p>,</span><span class=o>&amp;</span><span class=n>nice</span><span class=p>);</span><span class=c1>//read
+</span><span class=c1></span>    <span class=n>printf</span><span class=p>(</span><span class=s>&#34;pid: %d</span><span class=se>\n</span><span class=s>prio: %d</span><span class=se>\n</span><span class=s>nice: %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>tid</span><span class=p>,</span> <span class=n>prio</span><span class=p>,</span><span class=n>nice</span><span class=p>);</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><h4 id=编译测试代码并测试>编译测试代码并测试</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 编译 test.c</span>
+root@0xDayServer:~/dev/kernel/nice# gcc test.c -o <span class=nb>test</span>
+<span class=c1># 执行</span>
+root@0xDayServer:~/dev/kernel/nice# ./test
+pid: 12872
+prio: 20
+nice: 0
+pid: 12872
+prio: 20
+nice: 0
+pid: 12872
+prio: 15
+nice: -5
+*******************************
+pid: 12872
+prio: 15
+nice: -5
+pid: 12872
+prio: 15
+nice: -5
+pid: 12872
+prio: 5
+nice: -15
+<span class=c1># 查看模块输出信息</span>
+root@0xDayServer:~/dev/kernel/nice# tail /var/log/kern.log
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435431<span class=o>]</span> nice of the process：0
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435434<span class=o>]</span> prio of the process：20
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435466<span class=o>]</span> nice value edit before：0	edit after：-5
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435475<span class=o>]</span> nice of the process：-5
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435476<span class=o>]</span> prio of the process：15
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435481<span class=o>]</span> nice of the process：-5
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435481<span class=o>]</span> prio of the process：15
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435485<span class=o>]</span> nice value edit before：-5	edit after：-15
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435494<span class=o>]</span> nice of the process：-15
+Mar  <span class=m>7</span> 03:52:47 0xDayServer kernel: <span class=o>[</span>118009.435495<span class=o>]</span> prio of the process：5
+</code></pre></td></tr></table></div></div><h2 id=尾语>尾语</h2><p>这里提到的劫持系统调用，是 RootKit 中的一部分，RootKit 是一组工具，目标是隐藏它自身存在并继续向攻击者提供系统访问。所以我们可以通过劫持系统调用来做一些更有趣的事情，比如劫持 <code>sys_open</code> 来监视文件的创建。</p><p>同时，获取 <code>sys_call_table</code> 也有很多其他方式，比如 IDT（Interrupt Descriptor Table）、MSRs（Model-Specific Registers）在参考三中有它们的实现方式，总之，Linux Kernel 还挺有趣的，接下来再继续探索更多可玩的地方。</p><h2 id=参考>参考</h2><ul><li><a href=https://zhuanlan.zhihu.com/p/55214097>Linux系统调用流程</a></li><li><a href=https://docs-conquer-the-universe.readthedocs.io/zh_CN/latest/linux_rootkit/sys_call_table.html>Linux Rootkit 系列二：基于修改 sys_call_table 的系统调用挂钩</a></li><li><a href=https://github.com/oblique/articles/blob/master/kernel_mode_hooking/tutorial.english.txt>Kernel Mode Hooking Tutorial</a></li><li><a href=https://zhuanlan.zhihu.com/p/31342840>OS 实验一 | linux 内核编译及添加系统调用</a></li></ul></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/linux-kernel-practice-hello/ title="Previous post (older)"><span>Previous</span>
+Linux Kernel 实践(一)：Hello LKM</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.d8434d46e16675f8f4dff694f2a0927e2796e44e068788db71a78952d647a7da.js></script></footer></body></html>
