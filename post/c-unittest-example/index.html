@@ -1,0 +1,456 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>C语言项目单元测试实践 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.8074e9e349201c06c74222759992884cfb0e901ae2e814953c673215fc69acdc.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
+<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>C语言项目单元测试实践</h1><div class=post-meta><div>By on <time>December 22, 2020</time></div><div class=tags><a href=/tags/c/>C</a>
+<a href=/tags/cmake/>CMake</a>
+<a href=/tags/cmocka/>CMocka</a>
+<a href=/tags/codecov/>CodeCov</a></div></div></div></div></header></article><div class=article-post><h2 id=前言>前言</h2><p>最近一段时间在写C语言的课程设计，之前在用 Golang 的时候，Golang 自带单元测试，用起来非常舒服，而C语言不使用框架写测试则会很麻烦，下面通过一个简单的项目来实践在C语言中进行单元测试。</p><p>项目中使用 <a href=https://cmocka.org>CMocka</a> 作为单元测试框架，使用 <a href=https://about.codecov.io>CodeCov</a> 检查代码覆盖率。</p><p>完整项目代码可以在 GitHub 上查看：<a href=https://github.com/WingLim/c-unittest-example>c-unittest-example</a></p><h2 id=项目目录>项目目录</h2><pre><code>.
+├── CMakeLists.txt
+├── Makefile
+├── README.md
+├── cmake
+│   ├── CMocka.cmake
+│   └── CodeCov.cmake
+├── include
+│   └── add.h
+├── src
+│   └── add.c
+└── test
+    ├── CMakeLists.txt
+    ├── add_tests.c
+    └── test.h
+
+4 directories, 10 files
+</code></pre><h2 id=目录说明>目录说明</h2><p><code>cmake</code>: 存放 CMake 的模块文件，包括 CMocka 和 CodeCov。</p><p><code>include</code>: 项目头文件
+<code>src</code>: 项目源代码
+<code>test</code>: 单元测试代码</p><h2 id=项目设置文件>项目设置文件</h2><h3 id=makefile><code>Makefile</code></h3><p>用于便携执行单元测试和构建程序</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nf>.PHONY</span><span class=o>:</span> <span class=n>cmake</span> <span class=n>test</span>
+
+<span class=nv>BUILD_TYPE</span> <span class=o>?=</span> Debug
+<span class=nv>BUILD_DIR</span> <span class=o>?=</span> cmake-build-<span class=k>$(</span>shell <span class=nb>echo</span> <span class=k>$(</span>BUILD_TYPE<span class=k>)</span> <span class=p>|</span> tr <span class=s1>&#39;[:upper:]&#39;</span> <span class=s1>&#39;[:lower:]&#39;</span><span class=k>)</span>
+<span class=nv>CODECOV</span> <span class=o>?=</span> OFF
+<span class=nv>IWYU</span> <span class=o>?=</span> ON
+
+<span class=nv>TEST_SUITES</span> <span class=o>=</span> add_tests
+
+<span class=c># 清理文件
+</span><span class=c></span><span class=nf>clean</span><span class=o>:</span>
+	@rm -rf <span class=k>$(</span>BUILD_DIR<span class=k>)</span>
+
+<span class=c># 创建 cmake-build-debug，并在里面执行 cmake
+</span><span class=c></span><span class=nf>cmake</span><span class=o>:</span>
+	@mkdir -p <span class=k>$(</span>BUILD_DIR<span class=k>)</span> <span class=o>&amp;&amp;</span> <span class=nb>cd</span> <span class=k>$(</span>BUILD_DIR<span class=k>)</span> <span class=o>&amp;&amp;</span> cmake -DCODE_COVERAGE<span class=o>=</span><span class=k>$(</span>CODECOV<span class=k>)</span> -DIWYU<span class=o>=</span><span class=k>$(</span>IWYU<span class=k>)</span> -DCMAKE_BUILD_TYPE<span class=o>=</span><span class=k>$(</span>BUILD_TYPE<span class=k>)</span> -j <span class=m>4</span> ..
+
+<span class=c># 构建文件
+</span><span class=c></span><span class=nf>build</span><span class=o>:</span> <span class=n>cmake</span>
+	@cd <span class=k>$(</span>BUILD_DIR<span class=k>)</span> <span class=o>&amp;&amp;</span> make project -j <span class=m>4</span>
+
+<span class=c># 进行单元测试
+</span><span class=c></span><span class=nf>test</span><span class=o>:</span>
+	@cd <span class=k>$(</span>BUILD_DIR<span class=k>)</span> <span class=o>&amp;&amp;</span> make <span class=k>$(</span>TEST_SUITES<span class=k>)</span> <span class=nb>test</span> <span class=nv>CTEST_OUTPUT_ON_FAILURE</span><span class=o>=</span>TRUE
+
+<span class=c># 测试代码覆盖率
+</span><span class=c></span><span class=nf>coverage</span><span class=o>:</span> <span class=n>test</span>
+	@cd <span class=k>$(</span>BUILD_DIR<span class=k>)</span> <span class=o>&amp;&amp;</span> make codecov <span class=nv>CMAKE_BUILD_TYPE</span><span class=o>=</span><span class=k>$(</span>BUILD_TYPE<span class=k>)</span>
+</code></pre></td></tr></table></div></div><h3 id=cmakecmockacmake><code>cmake/CMocka.cmake</code></h3><p>添加 CMocka 到项目中</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=nb>include</span><span class=p>(</span><span class=s>ExternalProject</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 添加额外的项目，即 CMocka
+</span><span class=c></span><span class=nb>ExternalProject_Add</span><span class=p>(</span><span class=s>cmocka_ep</span>
+        <span class=s>URL</span> <span class=s>https://git.cryptomilk.org/projects/cmocka.git/snapshot/cmocka-1.1.5.tar.gz</span>
+
+        <span class=s>CMAKE_ARGS</span> <span class=s>-DCMAKE_BUILD_TYPE=</span><span class=o>${</span><span class=nv>CMAKE_BUILD_TYPE</span><span class=o>}</span>
+        <span class=s>-DCMAKE_SYSTEM_NAME=</span><span class=o>${</span><span class=nv>CMAKE_SYSTEM_NAME</span><span class=o>}</span>
+        <span class=s>-DBUILD_STATIC_LIB=ON</span>
+        <span class=s>-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=Debug</span>
+        <span class=s>-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=Release</span>
+        <span class=s>-DUNIT_TESTING=OFF</span>
+
+        <span class=s>BUILD_COMMAND</span> <span class=err>$</span><span class=p>(</span><span class=s>MAKE</span><span class=p>)</span> <span class=s>cmocka-static</span>
+        <span class=s>INSTALL_COMMAND</span> <span class=s2>&#34;&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 全局作用域下添加 cmocka 静态库
+</span><span class=c></span><span class=nb>add_library</span><span class=p>(</span><span class=s>cmocka</span> <span class=s>STATIC</span> <span class=s>IMPORTED</span> <span class=s>GLOBAL</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=c># 获取二进制文件夹路径
+</span><span class=c></span><span class=nb>ExternalProject_Get_Property</span><span class=p>(</span><span class=s>cmocka_ep</span> <span class=s>binary_dir</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 分别设置正常、Debug、Release的导入路径
+</span><span class=c></span><span class=nb>set_property</span><span class=p>(</span><span class=s>TARGET</span> <span class=s>cmocka</span> <span class=s>PROPERTY</span> <span class=s>IMPORTED_LOCATION</span> <span class=s2>&#34;${binary_dir}/src/libcmocka-static.a&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>set_property</span><span class=p>(</span><span class=s>TARGET</span> <span class=s>cmocka</span> <span class=s>PROPERTY</span> <span class=s>IMPORTED_LOCATION_DEBUG</span> <span class=s2>&#34;${binary_dir}/src/Debug/libcmocka-static.a&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>set_property</span><span class=p>(</span><span class=s>TARGET</span> <span class=s>cmocka</span> <span class=s>PROPERTY</span> <span class=s>IMPORTED_LOCATION_RELEASE</span> <span class=s2>&#34;${binary_dir}/src/Release/libcmocka-static.a&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 将 cmocka_ep 依赖添加到 cmocka
+</span><span class=c></span><span class=nb>add_dependencies</span><span class=p>(</span><span class=s>cmocka</span> <span class=s>cmocka_ep</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 获取 cmocka_ep 的源文件路径
+</span><span class=c></span><span class=nb>ExternalProject_Get_Property</span><span class=p>(</span><span class=s>cmocka_ep</span> <span class=s>source_dir</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=c># 全局作用域下设置头文件引入路径
+</span><span class=c></span><span class=nb>set</span><span class=p>(</span><span class=s>CMOCKA_INCLUDE_DIR</span> <span class=o>${</span><span class=nv>source_dir</span><span class=o>}</span><span class=s>/include</span> <span class=s>GLOBAL</span><span class=p>)</span><span class=err>
+</span></code></pre></td></tr></table></div></div><h3 id=cmakecodecovcmake><code>cmake/CodeCov.cmake</code></h3><p>添加 CodeCov 到项目中</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 寻找 gcovr 
+</span><span class=c></span><span class=nb>find_program</span><span class=p>(</span><span class=s>GCOVR_PATH</span> <span class=s>gcovr</span> <span class=s>PATHS</span> <span class=o>${</span><span class=nv>CMAKE_SOURCE_DIR</span><span class=o>}</span><span class=s>/scripts/test</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 设置 CMake 时的参数
+</span><span class=c></span><span class=nb>set</span><span class=p>(</span><span class=s>CMAKE_C_FLAGS_CODECOV</span> <span class=s2>&#34;-O0 -g --coverage&#34;</span> <span class=s>CACHE</span> <span class=s>INTERNAL</span> <span class=s2>&#34;&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=c># 设为高级变量
+</span><span class=c></span><span class=nb>mark_as_advanced</span><span class=p>(</span><span class=s>CMAKE_C_FLAGS_CODECOV</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 确保是在使用 Debug 来构建 
+</span><span class=c></span><span class=nb>string</span><span class=p>(</span><span class=s>TOLOWER</span> <span class=o>${</span><span class=nv>CMAKE_BUILD_TYPE</span><span class=o>}</span> <span class=s>current_build_type</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>if</span> <span class=p>(</span><span class=s>NOT</span> <span class=s>current_build_type</span> <span class=s>STREQUAL</span> <span class=s2>&#34;debug&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>message</span><span class=p>(</span><span class=s>WARNING</span> <span class=s2>&#34;Code coverage results with an optimised (non-Debug) build may be misleading&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>endif</span> <span class=p>()</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 如果使用的是 GNU 则链接 gcov 库文件
+</span><span class=c></span><span class=nb>if</span> <span class=p>(</span><span class=s>CMAKE_C_COMPILER_ID</span> <span class=s>STREQUAL</span> <span class=s2>&#34;GNU&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>link_libraries</span><span class=p>(</span><span class=s>gcov</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>endif</span> <span class=p>()</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 添加 CodeCov 编译参数到 CMake
+</span><span class=c></span><span class=nb>set</span><span class=p>(</span><span class=s>CMAKE_C_FLAGS</span> <span class=s2>&#34;${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_CODECOV}&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>message</span><span class=p>(</span><span class=s>STATUS</span> <span class=s2>&#34;Appending code coverage compiler flags: ${CMAKE_C_FLAGS_CODECOV}&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 添加自定义 target
+</span><span class=c></span><span class=nb>add_custom_target</span><span class=p>(</span><span class=s>codecov</span>
+        <span class=s>WORKING_DIRECTORY</span> <span class=o>${</span><span class=nv>PROJECT_BINARY_DIR</span><span class=o>}</span>
+        <span class=s>COMMENT</span> <span class=s2>&#34;Generating code cov report at ${PROJECT_BINARY_DIR}/codecov.xml&#34;</span>
+        <span class=c># 在 SHELL 中展示代码覆盖率总结
+</span><span class=c></span>        <span class=s>COMMAND</span> <span class=o>${</span><span class=nv>GCOVR_PATH</span><span class=o>}</span> <span class=s>--exclude-throw-branches</span> <span class=s>-r</span> <span class=s>..</span> <span class=s>--object-directory</span> <span class=s2>&#34;${PROJECT_BINARY_DIR}&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/test/.*&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/usr/.*&#34;</span> <span class=s>--print-summary</span>
+        <span class=c># 输出到 codecov.xml
+</span><span class=c></span>        <span class=s>COMMAND</span> <span class=o>${</span><span class=nv>GCOVR_PATH</span><span class=o>}</span> <span class=s>--xml</span> <span class=s>--exclude-throw-branches</span> <span class=s>-r</span> <span class=s>..</span> <span class=s>--object-directory</span> <span class=s2>&#34;${PROJECT_BINARY_DIR}&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/test/.*&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/usr/.*&#34;</span> <span class=s>-o</span> <span class=s>codecov.xml</span><span class=p>)</span><span class=err>
+</span></code></pre></td></tr></table></div></div><h3 id=cmakeliststxt><code>CMakeLists.txt</code></h3><p>设置当前项目</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># CMake 最低版本要求
+</span><span class=c></span><span class=nb>cmake_minimum_required</span><span class=p>(</span><span class=s>VERSION</span> <span class=s>3.17</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=c># 设置 CMake 模块目录
+</span><span class=c></span><span class=nb>set</span><span class=p>(</span><span class=s>CMAKE_MODULE_PATH</span> <span class=o>${</span><span class=nv>CMAKE_MODULE_PATH</span><span class=o>}</span> <span class=s2>&#34;${CMAKE_CURRENT_SOURCE_DIR}/cmake&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 项目名
+</span><span class=c></span><span class=nb>project</span><span class=p>(</span><span class=s>project</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 设置 CodeCov
+</span><span class=c></span><span class=nb>option</span><span class=p>(</span><span class=s>CODE_COVERAGE</span> <span class=s2>&#34;Enable coverage reporting&#34;</span> <span class=s>OFF</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>if</span> <span class=p>(</span><span class=s>CODE_COVERAGE</span> <span class=s>AND</span> <span class=s>CMAKE_C_COMPILER_ID</span> <span class=s>MATCHES</span> <span class=s2>&#34;GNU|Clang&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>include</span><span class=p>(</span><span class=s>CodeCov</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>endif</span> <span class=p>()</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 设置 include-what-you-use
+</span><span class=c></span><span class=nb>option</span><span class=p>(</span><span class=s>IWYU</span> <span class=s2>&#34;Run include-what-you-use with the compiler&#34;</span> <span class=s>OFF</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>if</span> <span class=p>(</span><span class=s>IWYU</span><span class=p>)</span><span class=err>
+</span><span class=err></span>		<span class=c># 寻找 iwyu
+</span><span class=c></span>    <span class=nb>find_program</span><span class=p>(</span><span class=s>IWYU_COMMAND</span> <span class=s>NAMES</span> <span class=s>include-what-you-use</span> <span class=s>iwyu</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>if</span> <span class=p>(</span><span class=s>NOT</span> <span class=s>IWYU_COMMAND</span><span class=p>)</span><span class=err>
+</span><span class=err></span>        <span class=nb>message</span><span class=p>(</span><span class=s>FATAL_ERROR</span> <span class=s2>&#34;CMAKE_IWYU is ON but include-what-you-use is not found!&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>endif</span> <span class=p>()</span><span class=err>
+</span><span class=err></span>    <span class=c># 添加饮用
+</span><span class=c></span>    <span class=nb>set</span><span class=p>(</span><span class=s>CMAKE_C_INCLUDE_WHAT_YOU_USE</span> <span class=s2>&#34;${IWYU_COMMAND};-Xiwyu&#34;</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>endif</span> <span class=p>()</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 启用测试
+</span><span class=c></span><span class=nb>enable_testing</span><span class=p>()</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 将源码添加到项目
+</span><span class=c></span><span class=nb>add_library</span><span class=p>(</span><span class=s>project</span>
+        <span class=s>src/add.c</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 设置头文件目录
+</span><span class=c></span><span class=nb>target_include_directories</span><span class=p>(</span><span class=s>project</span>
+        <span class=s>PUBLIC</span>
+        <span class=o>$&lt;</span><span class=nv>INSTALL_INTERFACE:include</span><span class=o>&gt;</span>
+        <span class=o>$&lt;</span><span class=nv>BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include</span><span class=o>&gt;</span>
+        <span class=s>PRIVATE</span>
+        <span class=o>${</span><span class=nv>CMAKE_CURRENT_SOURCE_DIR</span><span class=o>}</span><span class=s>/src</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 添加单元测试子文件
+</span><span class=c></span><span class=nb>add_subdirectory</span><span class=p>(</span><span class=s>test</span><span class=p>)</span><span class=err>
+</span></code></pre></td></tr></table></div></div><h3 id=testcmakeliststxt><code>test/CMakeLists.txt</code></h3><p>设置项目的单元测试</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 引入 CMocka.cmake
+</span><span class=c></span><span class=nb>include</span><span class=p>(</span><span class=s>CMocka</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 引入 Cmocka 头文件
+</span><span class=c></span><span class=nb>include_directories</span><span class=p>(</span><span class=o>${</span><span class=nv>CMOCKA_INCLUDE_DIR</span><span class=o>}</span><span class=p>)</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=c># 用于快捷添加测试，_testName 为单元测试的文件名，不带后缀
+</span><span class=c></span><span class=nb>function</span><span class=p>(</span><span class=s>add_test_suite</span> <span class=s>_testName</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>add_executable</span><span class=p>(</span><span class=o>${</span><span class=nv>_testName</span><span class=o>}</span> <span class=o>${</span><span class=nv>_testName</span><span class=o>}</span><span class=s>.c</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>target_link_libraries</span><span class=p>(</span><span class=o>${</span><span class=nv>_testName</span><span class=o>}</span> <span class=s>project</span> <span class=s>cmocka</span><span class=p>)</span><span class=err>
+</span><span class=err></span>    <span class=nb>add_test</span><span class=p>(</span><span class=o>${</span><span class=nv>_testName</span><span class=o>}</span> <span class=o>${</span><span class=nv>CMAKE_CURRENT_BINARY_DIR</span><span class=o>}</span><span class=s>/</span><span class=o>${</span><span class=nv>_testName</span><span class=o>}</span><span class=p>)</span><span class=err>
+</span><span class=err></span><span class=nb>endfunction</span><span class=p>()</span><span class=err>
+</span><span class=err>
+</span><span class=err></span><span class=nb>add_test_suite</span><span class=p>(</span><span class=s>add_tests</span><span class=p>)</span><span class=err>
+</span></code></pre></td></tr></table></div></div><h2 id=项目源码>项目源码</h2><p>这里实现一个可以传可变参数的加法函数。</p><h3 id=addh><code>add.h</code></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#ifndef PROJECT_ADD_H
+</span><span class=cp>#define PROJECT_ADD_H
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>add</span><span class=p>(</span><span class=kt>int</span> <span class=n>count</span><span class=p>,</span> <span class=p>...);</span>
+
+<span class=cp>#endif </span><span class=c1>//PROJECT_TEST_H
+</span></code></pre></td></tr></table></div></div><h3 id=addc><code>add.c</code></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&#34;add.h&#34;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;stdarg.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>add</span><span class=p>(</span><span class=kt>int</span> <span class=n>count</span><span class=p>,</span> <span class=p>...)</span> <span class=p>{</span>
+    <span class=n>va_list</span> <span class=n>arg_ptr</span><span class=p>;</span>
+    <span class=n>va_start</span><span class=p>(</span><span class=n>arg_ptr</span><span class=p>,</span> <span class=n>count</span><span class=p>);</span>
+    <span class=kt>int</span> <span class=n>sum</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>count</span><span class=p>;</span> <span class=o>++</span><span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kt>int</span> <span class=n>tmp</span> <span class=o>=</span> <span class=n>va_arg</span><span class=p>(</span><span class=n>arg_ptr</span><span class=p>,</span> <span class=kt>int</span><span class=p>);</span>
+        <span class=n>sum</span> <span class=o>+=</span> <span class=n>tmp</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>va_end</span><span class=p>(</span><span class=n>arg_ptr</span><span class=p>);</span>
+    <span class=k>return</span> <span class=n>sum</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><h3 id=testtesth><code>test/test.h</code></h3><p>引入 CMocka 所需的头文件</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#ifndef PROJECT_TEST_H
+</span><span class=cp>#define PROJECT_TEST_H
+</span><span class=cp></span>
+<span class=cp>#include</span> <span class=cpf>&lt;stdarg.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;stddef.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;setjmp.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;cmocka.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>run_all_tests</span><span class=p>(</span><span class=kt>void</span><span class=p>);</span>
+
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+    <span class=k>return</span> <span class=n>run_all_tests</span><span class=p>();</span>
+<span class=p>}</span>
+
+<span class=cp>#endif </span><span class=c1>//PROJECT_TEST_H
+</span></code></pre></td></tr></table></div></div><h3 id=testadd_testsc><code>test/add_tests.c</code></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&#34;test.h&#34;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&#34;add.h&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>static</span> <span class=kt>void</span> <span class=nf>test_add_1</span><span class=p>(</span><span class=kt>void</span> <span class=o>**</span><span class=n>state</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>sum</span> <span class=o>=</span> <span class=n>add</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span> <span class=mi>1</span><span class=p>);</span>
+    <span class=n>assert_int_equal</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span> <span class=n>sum</span><span class=p>);</span>
+<span class=p>}</span>
+
+<span class=k>static</span> <span class=kt>void</span> <span class=nf>test_add_2</span><span class=p>(</span><span class=kt>void</span> <span class=o>**</span><span class=n>state</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>sum</span> <span class=o>=</span> <span class=n>add</span><span class=p>(</span><span class=mi>2</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>);</span>
+    <span class=n>assert_int_equal</span><span class=p>(</span><span class=mi>3</span><span class=p>,</span> <span class=n>sum</span><span class=p>);</span>
+<span class=p>}</span>
+
+<span class=k>static</span> <span class=kt>void</span> <span class=nf>test_add_more</span><span class=p>(</span><span class=kt>void</span> <span class=o>**</span><span class=n>state</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>sum</span> <span class=o>=</span> <span class=n>add</span><span class=p>(</span><span class=mi>6</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>,</span> <span class=mi>4</span><span class=p>,</span> <span class=mi>5</span><span class=p>,</span> <span class=mi>6</span><span class=p>);</span>
+    <span class=n>assert_int_equal</span><span class=p>(</span><span class=mi>21</span><span class=p>,</span> <span class=n>sum</span><span class=p>);</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>run_all_tests</span><span class=p>()</span> <span class=p>{</span>
+    <span class=k>const</span> <span class=k>struct</span> <span class=n>CMUnitTest</span> <span class=n>tests</span><span class=p>[]</span> <span class=o>=</span> <span class=p>{</span>
+            <span class=n>cmocka_unit_test</span><span class=p>(</span><span class=n>test_add_1</span><span class=p>),</span>
+            <span class=n>cmocka_unit_test</span><span class=p>(</span><span class=n>test_add_2</span><span class=p>),</span>
+            <span class=n>cmocka_unit_test</span><span class=p>(</span><span class=n>test_add_more</span><span class=p>),</span>
+    <span class=p>};</span>
+
+    <span class=k>return</span> <span class=n>cmocka_run_group_tests</span><span class=p>(</span><span class=n>tests</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>);</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><h2 id=进行测试>进行测试</h2><p>项目根目录下执行</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=nv>CODECOV</span><span class=o>=</span>ON <span class=nv>IWYU</span><span class=o>=</span>OFF make cmake coverage
+</code></pre></td></tr></table></div></div><p>执行效果如下</p><p><img src=/Users/winglim/blog/static/images/image-20201222220536632.png alt=image-20201222220536632></p><p>到 <a href=https://about.codecov.io>CodeCov</a> 上创建项目，获取 TOKEN，执行如下命令上传测试报告</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=nb>echo</span> <span class=s2>&#34;YOUR TOKEN&#34;</span> &gt; .cc_token
+bash &lt;<span class=o>(</span>curl -s https://codecov.io/bash<span class=o>)</span> -f cmake-build-debug/codecov.xml -t @.cc_token
+</code></pre></td></tr></table></div></div><p>项目也可以使用 GitHub Actions 进行自动化构建和上传</p><p>在项目中设置 <code>secrets.CODECOV_TOKEN</code> 即可，详细设置可以查看 <code>.github/workflows/workflow.yml</code></p></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/linux-kernel-practice-hijack-syscall/ title="Previous post (older)"><span>Previous</span>
+Linux Kernel 实践(二)：劫持系统调用</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.d8434d46e16675f8f4dff694f2a0927e2796e44e068788db71a78952d647a7da.js></script></footer></body></html>
