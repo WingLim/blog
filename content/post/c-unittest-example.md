@@ -9,6 +9,7 @@ tags:
 - CMake
 categories:
 - Tech
+typora-root-url: ../../static
 ---
 
 
@@ -356,9 +357,9 @@ int run_all_tests() {
 CODECOV=ON IWYU=OFF make cmake coverage
 ```
 
-执行效果如下
+执行效果如下![image-20201222220536632](/images/image-20201222220536632.png)
 
-![image-20201222220536632](/Users/winglim/blog/static/images/image-20201222220536632.png)
+
 
 到 [CodeCov](https://about.codecov.io) 上创建项目，获取 TOKEN，执行如下命令上传测试报告
 
