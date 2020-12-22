@@ -2,66 +2,26 @@
 Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 <button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Linux Kernel 实践(一)：Hello LKM</h1><div class=post-meta><div>By on <time>March 06, 2020</time></div><div class=tags><a href=/tags/kernel/>Kernel</a>
 <a href=/tags/linux/>Linux</a>
-<a href=/tags/module/>Module</a></div></div></div></div></header></article><div class=article-post><p>实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息。</p><p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</p><h2 id=什么是内核模块>什么是内核模块</h2><p>Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加载到内存中，无须重新编译内核。所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。</p><p>内核模块和一般的 C 语言程序不同，它不使用 <code>main()</code> 函数作为入口，并且有如下区别：</p><ul><li>非顺序执行：内核模块使用初始化函数来进行注册，并处理请求，初始化函数运行后就结束了。 它可以处理的请求类型在模块代码中定义。</li><li>没有自动清理：内核模块申请的所有内存，必须要在模块卸载时手动释放，否则这些内存会无法使用，直到重启，也就是说我们需要在模块的卸载函数（也就是下文写到的退出函数）中，将使用的内存逐一释放。</li><li>会被中断：内核模块可能会同时被多个程序/进程使用，构建内核模块时要确保发生中断时行为一致和正确。想了解更多请看：<a href=https://www.cnblogs.com/linfeng-learning/p/9512866.html>Linux 内核的中断机制</a></li><li>更高级的执行特权：通常分配给内核模块的CPU周期比分配给用户空间程序的要多。编写内核模块时要小心，以免模块对系统的整体性能产生负面影响。</li><li>不支持浮点：在Linux内核里无法直接进行浮点计算，因为这样做可以省去在用户态与内核态之间进行切换时保存/恢复浮点寄存器 FPU的操作。</li></ul><h2 id=构建前的准备>构建前的准备</h2><p>通过包管理安装 Linux 内核头文件</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>$ sudo apt update
+<a href=/tags/module/>Module</a></div></div></div></div></header></article><div class=article-post><p>实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息。</p><p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</p><h2 id=什么是内核模块>什么是内核模块</h2><p>Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加载到内存中，无须重新编译内核。所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。</p><p>内核模块和一般的 C 语言程序不同，它不使用 <code>main()</code> 函数作为入口，并且有如下区别：</p><ul><li>非顺序执行：内核模块使用初始化函数来进行注册，并处理请求，初始化函数运行后就结束了。 它可以处理的请求类型在模块代码中定义。</li><li>没有自动清理：内核模块申请的所有内存，必须要在模块卸载时手动释放，否则这些内存会无法使用，直到重启，也就是说我们需要在模块的卸载函数（也就是下文写到的退出函数）中，将使用的内存逐一释放。</li><li>会被中断：内核模块可能会同时被多个程序/进程使用，构建内核模块时要确保发生中断时行为一致和正确。想了解更多请看：<a href=https://www.cnblogs.com/linfeng-learning/p/9512866.html>Linux 内核的中断机制</a></li><li>更高级的执行特权：通常分配给内核模块的CPU周期比分配给用户空间程序的要多。编写内核模块时要小心，以免模块对系统的整体性能产生负面影响。</li><li>不支持浮点：在Linux内核里无法直接进行浮点计算，因为这样做可以省去在用户态与内核态之间进行切换时保存/恢复浮点寄存器 FPU的操作。</li></ul><h2 id=构建前的准备>构建前的准备</h2><p>通过包管理安装 Linux 内核头文件</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>$ sudo apt update
 $ apt-cache search linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
 $ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
-</code></pre></td></tr></table></div></div><h2 id=开始写代码>开始写代码</h2><h3 id=引入头文件>引入头文件</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt; // 用于标记函数的宏</span><span class=cp>
+</code></pre></div><h2 id=开始写代码>开始写代码</h2><h3 id=引入头文件>引入头文件</h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt; // 用于标记函数的宏</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt; //加载内核模块到内核使用的核心头文件</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt; // 包含内核使用的类型、宏和函数</span><span class=cp>
-</span></code></pre></td></tr></table></div></div><h3 id=定义模块信息>定义模块信息</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>              <span class=c1>// 许可类型，它会影响到运行时行为 
+</span></code></pre></div><h3 id=定义模块信息>定义模块信息</h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>              <span class=c1>// 许可类型，它会影响到运行时行为 
 </span><span class=c1></span><span class=n>MODULE_AUTHOR</span><span class=p>(</span><span class=s>&#34;WingLim&#34;</span><span class=p>);</span>      <span class=c1>// 作者，当使用 modinfo 命令时可见 
 </span><span class=c1></span><span class=n>MODULE_DESCRIPTION</span><span class=p>(</span><span class=s>&#34;A simple Linux driver to say hello.&#34;</span><span class=p>);</span>  <span class=c1>// 模块描述，参见 modinfo 命令 
 </span><span class=c1></span><span class=n>MODULE_VERSION</span><span class=p>(</span><span class=s>&#34;0.1&#34;</span><span class=p>);</span>              <span class=c1>// 模块版本 
-</span></code></pre></td></tr></table></div></div><p>如果没有定义 <code>MODULE_LICENSE</code> ，在编译和加载模块时会报 <code>WARNING: modpost: missing MODULE_LICENSE()</code></p><p><code>MODULE_LICENSE</code> 可以选用 “GPL”，“GPL v2”，“GPL and additional rights”，“Dual BSD/GPL”，“Dual MPL/GPL”，“Proprietary” 这几个许可证。更多说明请看：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L209>linux/module.h#L209</a></p><h3 id=初始化函数>初始化函数</h3><p><code>static</code> 限制这个函数的可见范围为当前 C 文件</p><p><code>__init</code> 表示该函数仅在初始化阶段使用，之后释放使用的内存资源：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/init.h#L7>init.h#L7</a></p><p><code>@return</code> 执行成功返回 0</p><p>在内核中我们使用 <code>printk()</code> 来打印信息.。<code>printk()</code> 和 <code>printf()</code> 语法一样，但需要先定义消息类型。可用的消息类型可以到 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/kern_levels.h#L7>linux/kern_levels.h#L7-#L23</a> 查看</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>int</span> <span class=n>__init</span> <span class=nf>helloModule_init</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
+</span></code></pre></div><p>如果没有定义 <code>MODULE_LICENSE</code> ，在编译和加载模块时会报 <code>WARNING: modpost: missing MODULE_LICENSE()</code></p><p><code>MODULE_LICENSE</code> 可以选用 “GPL”，“GPL v2”，“GPL and additional rights”，“Dual BSD/GPL”，“Dual MPL/GPL”，“Proprietary” 这几个许可证。更多说明请看：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L209>linux/module.h#L209</a></p><h3 id=初始化函数>初始化函数</h3><p><code>static</code> 限制这个函数的可见范围为当前 C 文件</p><p><code>__init</code> 表示该函数仅在初始化阶段使用，之后释放使用的内存资源：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/init.h#L7>init.h#L7</a></p><p><code>@return</code> 执行成功返回 0</p><p>在内核中我们使用 <code>printk()</code> 来打印信息.。<code>printk()</code> 和 <code>printf()</code> 语法一样，但需要先定义消息类型。可用的消息类型可以到 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/kern_levels.h#L7>linux/kern_levels.h#L7-#L23</a> 查看</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>int</span> <span class=n>__init</span> <span class=nf>helloModule_init</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
    <span class=n>printk</span><span class=p>(</span><span class=n>KERN_INFO</span> <span class=s>&#34;Hello LKM!</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><h3 id=退出函数>退出函数</h3><p><code>__exit</code> 表示如果这个代码用于一个内置的驱动程序(而不是LKM)，则不需要这个函数。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>void</span> <span class=n>__exit</span> <span class=nf>helloModule_exit</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
+</code></pre></div><h3 id=退出函数>退出函数</h3><p><code>__exit</code> 表示如果这个代码用于一个内置的驱动程序(而不是LKM)，则不需要这个函数。</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>void</span> <span class=n>__exit</span> <span class=nf>helloModule_exit</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
    <span class=n>printk</span><span class=p>(</span><span class=n>KERN_INFO</span> <span class=s>&#34;Goodbye LKM!</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><h3 id=初始化退出模块>初始化&退出模块</h3><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L75>linux/module.h#L75-#L98</a></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
+</code></pre></div><h3 id=初始化退出模块>初始化&退出模块</h3><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L75>linux/module.h#L75-#L98</a></p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
 <span class=n>module_exit</span><span class=p>(</span><span class=n>helloModule_exit</span><span class=p>);</span>
-</code></pre></td></tr></table></div></div><h4 id=汇总>汇总</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span><span class=lnt>21
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
+</code></pre></div><h4 id=汇总>汇总</h4><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
 <span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
@@ -82,43 +42,16 @@ $ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span
 
 <span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
 <span class=n>module_exit</span><span class=p>(</span><span class=n>helloModule_exit</span><span class=p>);</span>
-</code></pre></td></tr></table></div></div><h2 id=编译>编译</h2><p>添加 <code>Makefile</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span><span class=lnt>4
-</span><span class=lnt>5
-</span><span class=lnt>6
-</span><span class=lnt>7
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>obj-m</span><span class=o>+=</span>hello.o
+</code></pre></div><h2 id=编译>编译</h2><p>添加 <code>Makefile</code></p><div class=highlight><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>obj-m</span><span class=o>+=</span>hello.o
 <span class=nv>KDIR</span> <span class=o>=</span> /lib/modules/<span class=k>$(</span>shell uname -r<span class=k>)</span>/build
 
 <span class=nf>all</span><span class=o>:</span>
     make -C <span class=k>$(</span>KDIR<span class=k>)</span> <span class=nv>M</span><span class=o>=</span><span class=k>$(</span>PWD<span class=k>)</span> modules
 <span class=nf>clean</span><span class=o>:</span>
     make -C <span class=k>$(</span>KDIR<span class=k>)</span> <span class=nv>M</span><span class=o>=</span><span class=k>$(</span>PWD<span class=k>)</span> clean
-</code></pre></td></tr></table></div></div><p>注意：<code>Makefile</code> 的基本语法如下，如果缩进不是 <code>&lt;TAB></code> 的话，会报错。</p><pre><code>&lt;target&gt;: [ &lt;dependency &gt; ]*
+</code></pre></div><p>注意：<code>Makefile</code> 的基本语法如下，如果缩进不是 <code>&lt;TAB></code> 的话，会报错。</p><pre><code>&lt;target&gt;: [ &lt;dependency &gt; ]*
        [ &lt;TAB&gt; &lt;command&gt; &lt;endl&gt; ]+
-</code></pre><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 查看当前文件</span>
+</code></pre><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 查看当前文件</span>
 root@0xDayServer:~/dev/kernel/hello# ls -l
 total 8
 -rw-r--r-- <span class=m>1</span> root root <span class=m>466</span> Mar  <span class=m>6</span> 22:53 hello.c
@@ -138,16 +71,7 @@ make<span class=o>[</span>1<span class=o>]</span>: Entering directory <span clas
 <span class=c1># 编译后生成的模块文件</span>
 root@0xDayServer:~/dev/kernel/hello# ls
 hello.c  hello.ko  hello.mod.c  hello.mod.o  hello.o  Makefile  modules.order  Module.symvers
-</code></pre></td></tr></table></div></div><h2 id=测试模块>测试模块</h2><h3 id=查看模块信息>查看模块信息</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span><span class=lnt>4
-</span><span class=lnt>5
-</span><span class=lnt>6
-</span><span class=lnt>7
-</span><span class=lnt>8
-</span><span class=lnt>9
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# modinfo hello.ko
+</code></pre></div><h2 id=测试模块>测试模块</h2><h3 id=查看模块信息>查看模块信息</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# modinfo hello.ko
 filename:       /root/dev/kernel/hello/hello.ko
 version:        0.1
 description:    A simple Linux driver to say hello.
@@ -156,54 +80,18 @@ license:        GPL
 srcversion:     093C7851C912088AEE5F77C
 depends:        
 vermagic:       4.4.0-93-generic SMP mod_unload modversions
-</code></pre></td></tr></table></div></div><h3 id=加载模块>加载模块</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko
+</code></pre></div><h3 id=加载模块>加载模块</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko
 root@0xDayServer:~/dev/kernel/hello# lsmod
 Module                  Size  Used by
 hello                  <span class=m>16384</span>  <span class=m>0</span> 
-</code></pre></td></tr></table></div></div><h3 id=卸载模块>卸载模块</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# rmmod hello
-</code></pre></td></tr></table></div></div><h3 id=查看-printk-输出信息>查看 printk() 输出信息</h3><ol><li>使用 <code>dmesg</code> 命令</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# dmesg
+</code></pre></div><h3 id=卸载模块>卸载模块</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# rmmod hello
+</code></pre></div><h3 id=查看-printk-输出信息>查看 printk() 输出信息</h3><ol><li>使用 <code>dmesg</code> 命令</li></ol><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# dmesg
 <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
 <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
-</code></pre></td></tr></table></div></div><ol start=2><li>查看内核日志</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
+</code></pre></div><ol start=2><li>查看内核日志</li></ol><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
 Mar  <span class=m>6</span> 22:58:16 0xDayServer kernel: <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
 Mar  <span class=m>6</span> 22:59:49 0xDayServer kernel: <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
-</code></pre></td></tr></table></div></div><h2 id=自定义参数>自定义参数</h2><p>将 <code>hello.c</code> 修改如下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span><span class=lnt>21
-</span><span class=lnt>22
-</span><span class=lnt>23
-</span><span class=lnt>24
-</span><span class=lnt>25
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
+</code></pre></div><h2 id=自定义参数>自定义参数</h2><p>将 <code>hello.c</code> 修改如下</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
 <span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
@@ -228,11 +116,8 @@ Mar  <span class=m>6</span> 22:59:49 0xDayServer kernel: <span class=o>[</span>1
 
 <span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
 <span class=n>module_exit</span><span class=p>(</span><span class=n>helloModule_exit</span><span class=p>);</span>
-</code></pre></td></tr></table></div></div><h3 id=解析>解析</h3><h4 id=static-char-name--lkm><code>static char *name = "LKM";</code></h4><p>声明了一个全局静态字符指针变量 <code>name</code>，默认值为<code>"LKM"</code></p><p>在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 <code>static</code> 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。</p><h4 id=module_paramname-type-permissions><code>module_param(name, type, permissions)</code></h4><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125>linux/moduleparam.h#L125</a></p><p><code>name</code> 名字：向用户显示的参数名称和模块中的变量名称</p><p><code>type</code> 参数类型：byte, short, ushort, int, uint, long, ulong, charp, bool, invbool</p><p><code>permissions</code> 权限：值为 <code>0</code> 时，禁用该项，<code>0444</code> 所有人可读，<code>0644</code> root用户可写，这里的写法和文件权限一致。</p><h4 id=module_parm_desc>MODULE_PARM_DESC</h4><p>参数描述，会显示在 <code>modinfo</code> 中</p><h3 id=调用>调用</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko <span class=nv>name</span><span class=o>=</span>World
+</code></pre></div><h3 id=解析>解析</h3><h4 id=static-char-name--lkm><code>static char *name = "LKM";</code></h4><p>声明了一个全局静态字符指针变量 <code>name</code>，默认值为<code>"LKM"</code></p><p>在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 <code>static</code> 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。</p><h4 id=module_paramname-type-permissions><code>module_param(name, type, permissions)</code></h4><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125>linux/moduleparam.h#L125</a></p><p><code>name</code> 名字：向用户显示的参数名称和模块中的变量名称</p><p><code>type</code> 参数类型：byte, short, ushort, int, uint, long, ulong, charp, bool, invbool</p><p><code>permissions</code> 权限：值为 <code>0</code> 时，禁用该项，<code>0444</code> 所有人可读，<code>0644</code> root用户可写，这里的写法和文件权限一致。</p><h4 id=module_parm_desc>MODULE_PARM_DESC</h4><p>参数描述，会显示在 <code>modinfo</code> 中</p><h3 id=调用>调用</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko <span class=nv>name</span><span class=o>=</span>World
 root@0xDayServer:~/dev/kernel/hello# dmesg
 <span class=o>[</span>103386.179203<span class=o>]</span> Hello World!
-</code></pre></td></tr></table></div></div><h2 id=参考>参考</h2><ul><li><a href=http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/>Writing a Linux Kernel Module — Part 1: Introduction</a></li><li><a href=http://abcdxyzk.github.io/blog/2018/01/08/kernel-fpu-1/>linux 下的浮点运算</a></li><li><a href=https://book.douban.com/subject/1493443/>Linux Device Drivers : 3rd Edition</a></li></ul></div></div><div class=container><nav class="flex container suggested"><a rel=next href=/post/linux-kernel-practice-hijack-syscall/ title="Next post (newer)"><span>Next</span>
+</code></pre></div><h2 id=参考>参考</h2><ul><li><a href=http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/>Writing a Linux Kernel Module — Part 1: Introduction</a></li><li><a href=http://abcdxyzk.github.io/blog/2018/01/08/kernel-fpu-1/>linux 下的浮点运算</a></li><li><a href=https://book.douban.com/subject/1493443/>Linux Device Drivers : 3rd Edition</a></li></ul></div></div><div class=container><nav class="flex container suggested"><a rel=next href=/post/linux-kernel-practice-hijack-syscall/ title="Next post (newer)"><span>Next</span>
 Linux Kernel 实践(二)：劫持系统调用</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.d8434d46e16675f8f4dff694f2a0927e2796e44e068788db71a78952d647a7da.js></script></footer></body></html>

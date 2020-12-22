@@ -22,35 +22,7 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 4 directories, 10 files
 </code></pre><h2 id=目录说明>目录说明</h2><p><code>cmake</code>: 存放 CMake 的模块文件，包括 CMocka 和 CodeCov。</p><p><code>include</code>: 项目头文件
 <code>src</code>: 项目源代码
-<code>test</code>: 单元测试代码</p><h2 id=项目设置文件>项目设置文件</h2><h3 id=makefile><code>Makefile</code></h3><p>用于便携执行单元测试和构建程序</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span><span class=lnt>21
-</span><span class=lnt>22
-</span><span class=lnt>23
-</span><span class=lnt>24
-</span><span class=lnt>25
-</span><span class=lnt>26
-</span><span class=lnt>27
-</span><span class=lnt>28
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nf>.PHONY</span><span class=o>:</span> <span class=n>cmake</span> <span class=n>test</span>
+<code>test</code>: 单元测试代码</p><h2 id=项目设置文件>项目设置文件</h2><h3 id=makefile><code>Makefile</code></h3><p>用于便携执行单元测试和构建程序</p><div class=highlight><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nf>.PHONY</span><span class=o>:</span> <span class=n>cmake</span> <span class=n>test</span>
 
 <span class=nv>BUILD_TYPE</span> <span class=o>?=</span> Debug
 <span class=nv>BUILD_DIR</span> <span class=o>?=</span> cmake-build-<span class=k>$(</span>shell <span class=nb>echo</span> <span class=k>$(</span>BUILD_TYPE<span class=k>)</span> <span class=p>|</span> tr <span class=s1>&#39;[:upper:]&#39;</span> <span class=s1>&#39;[:lower:]&#39;</span><span class=k>)</span>
@@ -78,40 +50,7 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 <span class=c># 测试代码覆盖率
 </span><span class=c></span><span class=nf>coverage</span><span class=o>:</span> <span class=n>test</span>
 	@cd <span class=k>$(</span>BUILD_DIR<span class=k>)</span> <span class=o>&amp;&amp;</span> make codecov <span class=nv>CMAKE_BUILD_TYPE</span><span class=o>=</span><span class=k>$(</span>BUILD_TYPE<span class=k>)</span>
-</code></pre></td></tr></table></div></div><h3 id=cmakecmockacmake><code>cmake/CMocka.cmake</code></h3><p>添加 CMocka 到项目中</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span><span class=lnt>21
-</span><span class=lnt>22
-</span><span class=lnt>23
-</span><span class=lnt>24
-</span><span class=lnt>25
-</span><span class=lnt>26
-</span><span class=lnt>27
-</span><span class=lnt>28
-</span><span class=lnt>29
-</span><span class=lnt>30
-</span><span class=lnt>31
-</span><span class=lnt>32
-</span><span class=lnt>33
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=nb>include</span><span class=p>(</span><span class=s>ExternalProject</span><span class=p>)</span><span class=err>
+</code></pre></div><h3 id=cmakecmockacmake><code>cmake/CMocka.cmake</code></h3><p>添加 CMocka 到项目中</p><div class=highlight><pre class=chroma><code class=language-cmake data-lang=cmake><span class=nb>include</span><span class=p>(</span><span class=s>ExternalProject</span><span class=p>)</span><span class=err>
 </span><span class=err>
 </span><span class=err></span><span class=c># 添加额外的项目，即 CMocka
 </span><span class=c></span><span class=nb>ExternalProject_Add</span><span class=p>(</span><span class=s>cmocka_ep</span>
@@ -144,38 +83,7 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 </span><span class=c></span><span class=nb>ExternalProject_Get_Property</span><span class=p>(</span><span class=s>cmocka_ep</span> <span class=s>source_dir</span><span class=p>)</span><span class=err>
 </span><span class=err></span><span class=c># 全局作用域下设置头文件引入路径
 </span><span class=c></span><span class=nb>set</span><span class=p>(</span><span class=s>CMOCKA_INCLUDE_DIR</span> <span class=o>${</span><span class=nv>source_dir</span><span class=o>}</span><span class=s>/include</span> <span class=s>GLOBAL</span><span class=p>)</span><span class=err>
-</span></code></pre></td></tr></table></div></div><h3 id=cmakecodecovcmake><code>cmake/CodeCov.cmake</code></h3><p>添加 CodeCov 到项目中</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span><span class=lnt>21
-</span><span class=lnt>22
-</span><span class=lnt>23
-</span><span class=lnt>24
-</span><span class=lnt>25
-</span><span class=lnt>26
-</span><span class=lnt>27
-</span><span class=lnt>28
-</span><span class=lnt>29
-</span><span class=lnt>30
-</span><span class=lnt>31
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 寻找 gcovr 
+</span></code></pre></div><h3 id=cmakecodecovcmake><code>cmake/CodeCov.cmake</code></h3><p>添加 CodeCov 到项目中</p><div class=highlight><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 寻找 gcovr 
 </span><span class=c></span><span class=nb>find_program</span><span class=p>(</span><span class=s>GCOVR_PATH</span> <span class=s>gcovr</span> <span class=s>PATHS</span> <span class=o>${</span><span class=nv>CMAKE_SOURCE_DIR</span><span class=o>}</span><span class=s>/scripts/test</span><span class=p>)</span><span class=err>
 </span><span class=err>
 </span><span class=err></span><span class=c># 设置 CMake 时的参数
@@ -206,50 +114,7 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 </span><span class=c></span>        <span class=s>COMMAND</span> <span class=o>${</span><span class=nv>GCOVR_PATH</span><span class=o>}</span> <span class=s>--exclude-throw-branches</span> <span class=s>-r</span> <span class=s>..</span> <span class=s>--object-directory</span> <span class=s2>&#34;${PROJECT_BINARY_DIR}&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/test/.*&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/usr/.*&#34;</span> <span class=s>--print-summary</span>
         <span class=c># 输出到 codecov.xml
 </span><span class=c></span>        <span class=s>COMMAND</span> <span class=o>${</span><span class=nv>GCOVR_PATH</span><span class=o>}</span> <span class=s>--xml</span> <span class=s>--exclude-throw-branches</span> <span class=s>-r</span> <span class=s>..</span> <span class=s>--object-directory</span> <span class=s2>&#34;${PROJECT_BINARY_DIR}&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/test/.*&#34;</span> <span class=s>-e</span> <span class=s2>&#34;.*/usr/.*&#34;</span> <span class=s>-o</span> <span class=s>codecov.xml</span><span class=p>)</span><span class=err>
-</span></code></pre></td></tr></table></div></div><h3 id=cmakeliststxt><code>CMakeLists.txt</code></h3><p>设置当前项目</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span><span class=lnt>21
-</span><span class=lnt>22
-</span><span class=lnt>23
-</span><span class=lnt>24
-</span><span class=lnt>25
-</span><span class=lnt>26
-</span><span class=lnt>27
-</span><span class=lnt>28
-</span><span class=lnt>29
-</span><span class=lnt>30
-</span><span class=lnt>31
-</span><span class=lnt>32
-</span><span class=lnt>33
-</span><span class=lnt>34
-</span><span class=lnt>35
-</span><span class=lnt>36
-</span><span class=lnt>37
-</span><span class=lnt>38
-</span><span class=lnt>39
-</span><span class=lnt>40
-</span><span class=lnt>41
-</span><span class=lnt>42
-</span><span class=lnt>43
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># CMake 最低版本要求
+</span></code></pre></div><h3 id=cmakeliststxt><code>CMakeLists.txt</code></h3><p>设置当前项目</p><div class=highlight><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># CMake 最低版本要求
 </span><span class=c></span><span class=nb>cmake_minimum_required</span><span class=p>(</span><span class=s>VERSION</span> <span class=s>3.17</span><span class=p>)</span><span class=err>
 </span><span class=err></span><span class=c># 设置 CMake 模块目录
 </span><span class=c></span><span class=nb>set</span><span class=p>(</span><span class=s>CMAKE_MODULE_PATH</span> <span class=o>${</span><span class=nv>CMAKE_MODULE_PATH</span><span class=o>}</span> <span class=s2>&#34;${CMAKE_CURRENT_SOURCE_DIR}/cmake&#34;</span><span class=p>)</span><span class=err>
@@ -292,21 +157,7 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 </span><span class=err>
 </span><span class=err></span><span class=c># 添加单元测试子文件
 </span><span class=c></span><span class=nb>add_subdirectory</span><span class=p>(</span><span class=s>test</span><span class=p>)</span><span class=err>
-</span></code></pre></td></tr></table></div></div><h3 id=testcmakeliststxt><code>test/CMakeLists.txt</code></h3><p>设置项目的单元测试</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 引入 CMocka.cmake
+</span></code></pre></div><h3 id=testcmakeliststxt><code>test/CMakeLists.txt</code></h3><p>设置项目的单元测试</p><div class=highlight><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 引入 CMocka.cmake
 </span><span class=c></span><span class=nb>include</span><span class=p>(</span><span class=s>CMocka</span><span class=p>)</span><span class=err>
 </span><span class=err>
 </span><span class=err></span><span class=c># 引入 Cmocka 头文件
@@ -320,33 +171,13 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 </span><span class=err></span><span class=nb>endfunction</span><span class=p>()</span><span class=err>
 </span><span class=err>
 </span><span class=err></span><span class=nb>add_test_suite</span><span class=p>(</span><span class=s>add_tests</span><span class=p>)</span><span class=err>
-</span></code></pre></td></tr></table></div></div><h2 id=项目源码>项目源码</h2><p>这里实现一个可以传可变参数的加法函数。</p><h3 id=addh><code>add.h</code></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span><span class=lnt>3
-</span><span class=lnt>4
-</span><span class=lnt>5
-</span><span class=lnt>6
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#ifndef PROJECT_ADD_H
+</span></code></pre></div><h2 id=项目源码>项目源码</h2><p>这里实现一个可以传可变参数的加法函数。</p><h3 id=addh><code>add.h</code></h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#ifndef PROJECT_ADD_H
 </span><span class=cp>#define PROJECT_ADD_H
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>add</span><span class=p>(</span><span class=kt>int</span> <span class=n>count</span><span class=p>,</span> <span class=p>...);</span>
 
 <span class=cp>#endif </span><span class=c1>//PROJECT_TEST_H
-</span></code></pre></td></tr></table></div></div><h3 id=addc><code>add.c</code></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&#34;add.h&#34;</span><span class=cp>
+</span></code></pre></div><h3 id=addc><code>add.c</code></h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&#34;add.h&#34;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;stdarg.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>add</span><span class=p>(</span><span class=kt>int</span> <span class=n>count</span><span class=p>,</span> <span class=p>...)</span> <span class=p>{</span>
@@ -360,23 +191,7 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
     <span class=n>va_end</span><span class=p>(</span><span class=n>arg_ptr</span><span class=p>);</span>
     <span class=k>return</span> <span class=n>sum</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><h3 id=testtesth><code>test/test.h</code></h3><p>引入 CMocka 所需的头文件</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#ifndef PROJECT_TEST_H
+</code></pre></div><h3 id=testtesth><code>test/test.h</code></h3><p>引入 CMocka 所需的头文件</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#ifndef PROJECT_TEST_H
 </span><span class=cp>#define PROJECT_TEST_H
 </span><span class=cp></span>
 <span class=cp>#include</span> <span class=cpf>&lt;stdarg.h&gt;</span><span class=cp>
@@ -392,34 +207,7 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 <span class=p>}</span>
 
 <span class=cp>#endif </span><span class=c1>//PROJECT_TEST_H
-</span></code></pre></td></tr></table></div></div><h3 id=testadd_testsc><code>test/add_tests.c</code></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
-</span><span class=lnt> 2
-</span><span class=lnt> 3
-</span><span class=lnt> 4
-</span><span class=lnt> 5
-</span><span class=lnt> 6
-</span><span class=lnt> 7
-</span><span class=lnt> 8
-</span><span class=lnt> 9
-</span><span class=lnt>10
-</span><span class=lnt>11
-</span><span class=lnt>12
-</span><span class=lnt>13
-</span><span class=lnt>14
-</span><span class=lnt>15
-</span><span class=lnt>16
-</span><span class=lnt>17
-</span><span class=lnt>18
-</span><span class=lnt>19
-</span><span class=lnt>20
-</span><span class=lnt>21
-</span><span class=lnt>22
-</span><span class=lnt>23
-</span><span class=lnt>24
-</span><span class=lnt>25
-</span><span class=lnt>26
-</span><span class=lnt>27
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&#34;test.h&#34;</span><span class=cp>
+</span></code></pre></div><h3 id=testadd_testsc><code>test/add_tests.c</code></h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&#34;test.h&#34;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&#34;add.h&#34;</span><span class=cp>
 </span><span class=cp></span>
 <span class=k>static</span> <span class=kt>void</span> <span class=nf>test_add_1</span><span class=p>(</span><span class=kt>void</span> <span class=o>**</span><span class=n>state</span><span class=p>)</span> <span class=p>{</span>
@@ -446,11 +234,8 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 
     <span class=k>return</span> <span class=n>cmocka_run_group_tests</span><span class=p>(</span><span class=n>tests</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>);</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><h2 id=进行测试>进行测试</h2><p>项目根目录下执行</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=nv>CODECOV</span><span class=o>=</span>ON <span class=nv>IWYU</span><span class=o>=</span>OFF make cmake coverage
-</code></pre></td></tr></table></div></div><p>执行效果如下</p><p><img src=/Users/winglim/blog/static/images/image-20201222220536632.png alt=image-20201222220536632></p><p>到 <a href=https://about.codecov.io>CodeCov</a> 上创建项目，获取 TOKEN，执行如下命令上传测试报告</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span><span class=lnt>2
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=nb>echo</span> <span class=s2>&#34;YOUR TOKEN&#34;</span> &gt; .cc_token
+</code></pre></div><h2 id=进行测试>进行测试</h2><p>项目根目录下执行</p><div class=highlight><pre class=chroma><code class=language-shell data-lang=shell><span class=nv>CODECOV</span><span class=o>=</span>ON <span class=nv>IWYU</span><span class=o>=</span>OFF make cmake coverage
+</code></pre></div><p>执行效果如下<img src=/images/image-20201222220536632.png alt=image-20201222220536632></p><p>到 <a href=https://about.codecov.io>CodeCov</a> 上创建项目，获取 TOKEN，执行如下命令上传测试报告</p><div class=highlight><pre class=chroma><code class=language-shell data-lang=shell><span class=nb>echo</span> <span class=s2>&#34;YOUR TOKEN&#34;</span> &gt; .cc_token
 bash &lt;<span class=o>(</span>curl -s https://codecov.io/bash<span class=o>)</span> -f cmake-build-debug/codecov.xml -t @.cc_token
-</code></pre></td></tr></table></div></div><p>项目也可以使用 GitHub Actions 进行自动化构建和上传</p><p>在项目中设置 <code>secrets.CODECOV_TOKEN</code> 即可，详细设置可以查看 <code>.github/workflows/workflow.yml</code></p></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/linux-kernel-practice-hijack-syscall/ title="Previous post (older)"><span>Previous</span>
+</code></pre></div><p>项目也可以使用 GitHub Actions 进行自动化构建和上传</p><p>在项目中设置 <code>secrets.CODECOV_TOKEN</code> 即可，详细设置可以查看 <code>.github/workflows/workflow.yml</code></p></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/linux-kernel-practice-hijack-syscall/ title="Previous post (older)"><span>Previous</span>
 Linux Kernel 实践(二)：劫持系统调用</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.d8434d46e16675f8f4dff694f2a0927e2796e44e068788db71a78952d647a7da.js></script></footer></body></html>
