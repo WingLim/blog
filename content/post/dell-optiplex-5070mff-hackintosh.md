@@ -14,7 +14,7 @@ categories:
 
 EFI开源托管在GitHub：[Dell-Optiplex-5070mff-Hackintosh](https://github.com/WingLim/Dell-Optiplex-5070mff-Hackintosh)
 
-![Tested in Big Sur 11.2.2](https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210314192649.png)
+![Tested in Big Sur 11.2.3](https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210315163415.png)
 
 ## 配置介绍
 
@@ -26,8 +26,8 @@ EFI开源托管在GitHub：[Dell-Optiplex-5070mff-Hackintosh](https://github.com
 - 内存: 8GB DDR4 2666 * 2 双通道
 - 硬盘: KIOXIA RC10 NVME SSD 500G
 - Wi-Fi & Bluetooth: DW1820A
-- 声卡: Realtek ALC255
-- 网卡: i215
+- 声卡: Realtek ALC255(3234)
+- 板载网卡: Intel I219-LM7
 
 
 
@@ -82,7 +82,7 @@ setup_var 0x8DC 0x02
 
 1. 核显驱动
 
-   戴尔主板的显示总线在1号和2号，注入核显型号后还需要注入总线ID，因为主板上只有两个DP接口，所以把`con2`屏蔽掉了。但5070MFF主板上有接口可以扩展出新的视频输出，如果有需要需要自己测试。
+   戴尔主板的显示总线在`1号`和`2号`，注入核显型号后还需要注入总线ID，因为主板上只有两个DP接口，所以把`con2`屏蔽掉了。但5070MFF主板上有接口可以扩展出新的视频输出，如果有需要需要自己测试。
 
    ![核显驱动设置](https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210314204729.png)
 
