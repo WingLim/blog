@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Dell on Lim's Blog</title><link>/tags/dell/</link><description>Recent content in Dell on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Wed, 10 Mar 2021 19:09:40 +0800</lastBuildDate><atom:link href="/tags/dell/index.xml" rel="self" type="application/rss+xml"/><item><title>戴尔5070MFF黑苹果体验</title><link>/post/dell-optiplex-5070mff-hackintosh/</link><pubDate>Wed, 10 Mar 2021 19:09:40 +0800</pubDate><guid>/post/dell-optiplex-5070mff-hackintosh/</guid><description>EFI开源托管在GitHub：Dell-Optiplex-5070mff-Hackintosh
 配置介绍 硬件配置：
-准系统: Dell OptiPlex 5070 Micro Form Factor CPU: Intel® Core™ i5-9500T Processor 核显: Intel® UHD Graphics 630 内存: 8GB DDR4 2666 * 2 双通道 硬盘: KIOXIA RC10 NVME SSD 500G Wi-Fi &amp;amp; Bluetooth: DW1820A 声卡: Realtek ALC255 网卡: i215 接口配置：
+准系统: Dell OptiPlex 5070 Micro Form Factor CPU: Intel® Core™ i5-9500T Processor 核显: Intel® UHD Graphics 630 内存: 8GB DDR4 2666 * 2 双通道 硬盘: KIOXIA RC10 NVME SSD 500G Wi-Fi &amp;amp; Bluetooth: DW1820A 声卡: Realtek ALC255(3234) 板载网卡: Intel I219-LM7 接口配置：
 前面板：
 通用音频接口 有线音频输出 Type C(USB3.1 Gen2 PowerShare) 注：不是雷电接口 Type-A USB接口(USB 3.1 Gen1 PowerShare) 后面板：
 RJ-45网线接口 Type-A USB接口(USB 3.1 Gen1) * 4 DP接口 * 2 正常功能 CPU睿频 核显加速 Airdrop &amp;amp; Airplay &amp;amp; Handoff 所有USB接口 有线及无线网 扬声器 &amp;amp; 通用音频接口 &amp;amp; 有线音频输出 睡眠 安装前准备 安装黑苹果前需要使用GRUB，将关闭CFG锁和设置预分配的DVMT内存到64M。</description></item></channel></rss>
