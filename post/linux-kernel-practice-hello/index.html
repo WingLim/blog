@@ -1,13 +1,13 @@
-<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Linux Kernel 实践(一)：Hello LKM | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.96090b4177a3194fa2de0860f2c55524d6582b68a41222fe4030905ef033075a.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Linux Kernel 实践(一)：Hello LKM | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.4e90cee935c47394b47f9cb7ffe8e3ffab18b88d82fea203918cc3f92eec5eb2.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
 Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
-<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Linux Kernel 实践(一)：Hello LKM</h1><div class=post-meta><div>By on <time>March 06, 2020</time></div><div class=tags><a href=/tags/kernel/>Kernel</a>
+<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Linux Kernel 实践(一)：Hello LKM</h1><div class=post-meta><div>By WingLim on <time>March 06, 2020</time></div><div class=tags><a href=/tags/kernel/>Kernel</a>
 <a href=/tags/linux/>Linux</a>
 <a href=/tags/module/>Module</a></div></div></div></div></header></article><div class=article-post><p>实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息。</p><p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</p><h2 id=什么是内核模块>什么是内核模块</h2><p>Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加载到内存中，无须重新编译内核。所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。</p><p>内核模块和一般的 C 语言程序不同，它不使用 <code>main()</code> 函数作为入口，并且有如下区别：</p><ul><li>非顺序执行：内核模块使用初始化函数来进行注册，并处理请求，初始化函数运行后就结束了。 它可以处理的请求类型在模块代码中定义。</li><li>没有自动清理：内核模块申请的所有内存，必须要在模块卸载时手动释放，否则这些内存会无法使用，直到重启，也就是说我们需要在模块的卸载函数（也就是下文写到的退出函数）中，将使用的内存逐一释放。</li><li>会被中断：内核模块可能会同时被多个程序/进程使用，构建内核模块时要确保发生中断时行为一致和正确。想了解更多请看：<a href=https://www.cnblogs.com/linfeng-learning/p/9512866.html>Linux 内核的中断机制</a></li><li>更高级的执行特权：通常分配给内核模块的CPU周期比分配给用户空间程序的要多。编写内核模块时要小心，以免模块对系统的整体性能产生负面影响。</li><li>不支持浮点：在Linux内核里无法直接进行浮点计算，因为这样做可以省去在用户态与内核态之间进行切换时保存/恢复浮点寄存器 FPU的操作。</li></ul><h2 id=构建前的准备>构建前的准备</h2><p>通过包管理安装 Linux 内核头文件</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>$ sudo apt update
 $ apt-cache search linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
 $ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
-</code></pre></div><h2 id=开始写代码>开始写代码</h2><h3 id=引入头文件>引入头文件</h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt; // 用于标记函数的宏</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt; //加载内核模块到内核使用的核心头文件</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt; // 包含内核使用的类型、宏和函数</span><span class=cp>
+</code></pre></div><h2 id=开始写代码>开始写代码</h2><h3 id=引入头文件>引入头文件</h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt; // 用于标记函数的宏</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt; //加载内核模块到内核使用的核心头文件</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt; // 包含内核使用的类型、宏和函数</span><span class=cp>
 </span></code></pre></div><h3 id=定义模块信息>定义模块信息</h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>              <span class=c1>// 许可类型，它会影响到运行时行为 
 </span><span class=c1></span><span class=n>MODULE_AUTHOR</span><span class=p>(</span><span class=s>&#34;WingLim&#34;</span><span class=p>);</span>      <span class=c1>// 作者，当使用 modinfo 命令时可见 
 </span><span class=c1></span><span class=n>MODULE_DESCRIPTION</span><span class=p>(</span><span class=s>&#34;A simple Linux driver to say hello.&#34;</span><span class=p>);</span>  <span class=c1>// 模块描述，参见 modinfo 命令 
@@ -22,9 +22,9 @@ $ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span
 </code></pre></div><h3 id=初始化退出模块>初始化&退出模块</h3><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L75>linux/module.h#L75-#L98</a></p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
 <span class=n>module_exit</span><span class=p>(</span><span class=n>helloModule_exit</span><span class=p>);</span>
 </code></pre></div><h4 id=汇总>汇总</h4><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
-<span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
+<span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>
 <span class=n>MODULE_AUTHOR</span><span class=p>(</span><span class=s>&#34;WingLim&#34;</span><span class=p>);</span>
@@ -53,7 +53,7 @@ $ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span
        [ &lt;TAB&gt; &lt;command&gt; &lt;endl&gt; ]+
 </code></pre><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 查看当前文件</span>
 root@0xDayServer:~/dev/kernel/hello# ls -l
-total 8
+total <span class=m>8</span>
 -rw-r--r-- <span class=m>1</span> root root <span class=m>466</span> Mar  <span class=m>6</span> 22:53 hello.c
 -rw-r--r-- <span class=m>1</span> root root <span class=m>154</span> Mar  <span class=m>6</span> 22:54 Makefile
 
@@ -92,9 +92,9 @@ hello                  <span class=m>16384</span>  <span class=m>0</span>
 Mar  <span class=m>6</span> 22:58:16 0xDayServer kernel: <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
 Mar  <span class=m>6</span> 22:59:49 0xDayServer kernel: <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
 </code></pre></div><h2 id=自定义参数>自定义参数</h2><p>将 <code>hello.c</code> 修改如下</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
-<span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
+<span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>
 <span class=n>MODULE_AUTHOR</span><span class=p>(</span><span class=s>&#34;WingLim&#34;</span><span class=p>);</span>

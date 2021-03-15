@@ -1,10 +1,10 @@
-<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Linux Kernel 实践(二)：劫持系统调用 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.96090b4177a3194fa2de0860f2c55524d6582b68a41222fe4030905ef033075a.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Linux Kernel 实践(二)：劫持系统调用 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.4e90cee935c47394b47f9cb7ffe8e3ffab18b88d82fea203918cc3f92eec5eb2.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
 Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
-<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Linux Kernel 实践(二)：劫持系统调用</h1><div class=post-meta><div>By on <time>March 06, 2020</time></div><div class=tags><a href=/tags/kernel/>Kernel</a>
+<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Linux Kernel 实践(二)：劫持系统调用</h1><div class=post-meta><div>By WingLim on <time>March 06, 2020</time></div><div class=tags><a href=/tags/kernel/>Kernel</a>
 <a href=/tags/linux/>Linux</a>
 <a href=/tags/module/>Module</a></div></div></div></div></header></article><div class=article-post><p>通过劫持系统调用表，将原有系统调用替换成自定义系统调用。</p><p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</p><p>劫持系统调用有风险，请不要在实体机上尝试。</p><h2 id=前言>前言</h2><p>添加系统调用有两种方法</p><ul><li>修改内核源代码，并重新编译内核</li></ul><p>这种耗时耗力，比较麻烦，但是是在原有的系统调用中插入新的系统调用，不会出现冲突等问题。</p><ul><li>通过内核模块重新映射系统调用地址</li></ul><p>通过拦截系统调用表，将某个系统调用的地址修改成我们自定义的系统系统调用。</p><h2 id=什么是系统调用表>什么是系统调用表</h2><p>在 Linux 中每个系统调用都有相应的系统调用号作为唯一的标识，内核维护一张系统调用表：<code>sys_call_table</code>。</p><p>在 64 位系统中，<code>sys_call_table</code> 的定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscall_64.c#L25>entry/syscall_64.c#L25</a></p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=n>asmlinkage</span> <span class=k>const</span> <span class=n>sys_call_ptr_t</span> <span class=n>sys_call_table</span><span class=p>[</span><span class=n>__NR_syscall_max</span><span class=o>+</span><span class=mi>1</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span>
 	<span class=p>[</span><span class=mi>0</span> <span class=p>...</span> <span class=n>__NR_syscall_max</span><span class=p>]</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>sys_ni_syscall</span><span class=p>,</span>
-<span class=cp>#include</span> <span class=cpf>&lt;asm/syscalls_64.h&gt;</span><span class=cp>
+<span class=cp>#include</span> <span class=cpf>&lt;asm/syscalls_64.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=p>};</span>
 </code></pre></div><p>其中 <code>#include &lt;asm/syscalls_64.h></code> 是通过 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/Makefile#L50>entry/syscalls/Makefile</a> 以 <a href=https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl>entry/syscalls/syscall_64.tbl</a> 为源文件编译生成的。</p><div class=highlight><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>out</span> <span class=o>:=</span> <span class=k>$(</span>obj<span class=k>)</span>/../../include/generated/asm
 <span class=nv>syscall64</span> <span class=o>:=</span> <span class=k>$(</span>srctree<span class=k>)</span>/<span class=k>$(</span>src<span class=k>)</span>/syscall_64.tbl
@@ -77,15 +77,15 @@ ffffffff81a01520 R ia32_sys_call_table
 </span><span class=cm> * @brief  读取及修改一个进程的 nice 值，并返回最新的 nice 值及优先级 prio 的模块化实现
 </span><span class=cm>*/</span>
 
-<span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
+<span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=c1>// 下面这些头文件为自定义系统调用要用到的
-</span><span class=c1></span><span class=cp>#include</span> <span class=cpf>&lt;linux/pid.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/sched.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/syscalls.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/uaccess.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;linux/unistd.h&gt;</span><span class=cp>
+</span><span class=c1></span><span class=cp>#include</span> <span class=cpf>&lt;linux/pid.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/sched.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/syscalls.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/uaccess.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;linux/unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=c1>// 这里是随便挑了一个系统调用来劫持，224 为 timer_gettime
 </span><span class=c1></span><span class=cp>#define the_syscall_num 224
@@ -211,9 +211,9 @@ make<span class=o>[</span>1<span class=o>]</span>: Entering directory <span clas
 root@0xDayServer:~/dev/kernel/nice# insmod nice.ko
 </code></pre></div><h4 id=模块测试代码>模块测试代码</h4><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*test.c*/</span>
 <span class=cp>#define _GNU_SOURCE
-</span><span class=cp>#include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;sys/syscall.h&gt;</span><span class=cp>
-</span><span class=cp>#include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;sys/syscall.h&gt;</span><span class=cp>
+</span><span class=cp>#include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
 </span><span class=cp>#define __NR_mysetnice 224 </span><span class=c1>//系统调用号
 </span><span class=c1></span>
 <span class=kt>int</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
@@ -241,24 +241,24 @@ root@0xDayServer:~/dev/kernel/nice# insmod nice.ko
 root@0xDayServer:~/dev/kernel/nice# gcc test.c -o <span class=nb>test</span>
 <span class=c1># 执行</span>
 root@0xDayServer:~/dev/kernel/nice# ./test
-pid: 12872
-prio: 20
-nice: 0
-pid: 12872
-prio: 20
-nice: 0
-pid: 12872
-prio: 15
+pid: <span class=m>12872</span>
+prio: <span class=m>20</span>
+nice: <span class=m>0</span>
+pid: <span class=m>12872</span>
+prio: <span class=m>20</span>
+nice: <span class=m>0</span>
+pid: <span class=m>12872</span>
+prio: <span class=m>15</span>
 nice: -5
 *******************************
-pid: 12872
-prio: 15
+pid: <span class=m>12872</span>
+prio: <span class=m>15</span>
 nice: -5
-pid: 12872
-prio: 15
+pid: <span class=m>12872</span>
+prio: <span class=m>15</span>
 nice: -5
-pid: 12872
-prio: 5
+pid: <span class=m>12872</span>
+prio: <span class=m>5</span>
 nice: -15
 <span class=c1># 查看模块输出信息</span>
 root@0xDayServer:~/dev/kernel/nice# tail /var/log/kern.log
