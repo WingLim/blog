@@ -1,0 +1,52 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>使用GiHub Actions构建多架构Docker镜像 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.4e90cee935c47394b47f9cb7ffe8e3ffab18b88d82fea203918cc3f92eec5eb2.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
+<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>使用GiHub Actions构建多架构Docker镜像</h1><div class=post-meta><div>By on <time>April 17, 2021</time></div><div class=tags><a href=/tags/docker-image/>Docker Image</a>
+<a href=/tags/github/>GitHub</a></div></div></div></div></header></article><div class=article-post><p>Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。</p><p>但仍存在一个问题，如果你直接使用 <code>docker build</code> ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 <code>Dockerfile</code> 拉到虚拟机中进行构建，但这会花费很多时间。</p><p>通过 GitHub Actions，我们可以在 <code>push</code> 代码的时候，自动进行多架构的镜像构建，不再需要手动构建并推送到 Docker Hub 等镜像仓库中。</p><p>下面是一个示例：</p><p>这是我在 <a href=https://github.com/WingLim/kea-dhcp4>kea-dhcp4</a> 中使用的 GitHub Actions 构建脚本的一部分</p><p>要推送到 DockerHub，则需要在 repo 的 sercrets 中设置 DockerHub 的用户名及 TOKEN</p><p>TOKEN 的生成参考：<a href=https://docs.docker.com/docker-hub/access-tokens/>Managing access tokens</a></p><p>要推送到 GitHub 的镜像仓库，即 ghcr.io 中则需要设置 PAT(Personal Access Token)</p><p>CR_PAT 的生成参考：<a href=https://docs.github.com/en/packages/guides/migrating-to-github-container-registry-for-docker-images>Migrating to GitHub Container Registry for Docker images</a></p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml><span class=k>name</span><span class=p>:</span><span class=w> </span>build<span class=w>
+</span><span class=w>
+</span><span class=w></span><span class=k>on</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=k>push</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=k>branches</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=w> </span>main<span class=w> </span><span class=p>]</span><span class=w>
+</span><span class=w>    </span><span class=k>paths-ignore</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span>- <span class=s2>&#34;README.md&#34;</span><span class=w>
+</span><span class=w>
+</span><span class=w></span><span class=k>jobs</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=k>build</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=k>runs-on</span><span class=p>:</span><span class=w> </span>ubuntu-latest<span class=w>
+</span><span class=w>    </span><span class=k>steps</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=sd>-
+</span><span class=sd>        name: Checkout</span><span class=w>
+</span><span class=w>        </span><span class=k>uses</span><span class=p>:</span><span class=w> </span>actions/checkout@v2<span class=w>
+</span><span class=w>      </span><span class=sd>-
+</span><span class=sd>        name: Set up QEMU</span><span class=w>
+</span><span class=w>        </span><span class=k>uses</span><span class=p>:</span><span class=w> </span>docker/setup-qemu-action@v1<span class=w>
+</span><span class=w>      </span><span class=sd>-
+</span><span class=sd>        name: Set up Docker Buildx</span><span class=w>
+</span><span class=w>        </span><span class=k>uses</span><span class=p>:</span><span class=w> </span>docker/setup-buildx-action@v1<span class=w>
+</span><span class=w>      </span><span class=sd>-
+</span><span class=sd>        name: Login to DockerHub</span><span class=w>
+</span><span class=w>        </span><span class=k>uses</span><span class=p>:</span><span class=w> </span>docker/login-action@v1<span class=w>
+</span><span class=w>        </span><span class=k>with</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=k>username</span><span class=p>:</span><span class=w> </span>${{<span class=w> </span>secrets.DOCKERHUB_USERNAME<span class=w> </span>}}<span class=w>
+</span><span class=w>          </span><span class=k>password</span><span class=p>:</span><span class=w> </span>${{<span class=w> </span>secrets.DOCKERHUB_TOKEN<span class=w> </span>}}<span class=w>
+</span><span class=w>      </span><span class=sd>-
+</span><span class=sd>        name: Login to GitHub Container Registry</span><span class=w>
+</span><span class=w>        </span><span class=k>uses</span><span class=p>:</span><span class=w> </span>docker/login-action@v1<span class=w> 
+</span><span class=w>        </span><span class=c># 在 sercrets 中设置 CR_PAT</span><span class=w>
+</span><span class=w>        </span><span class=c># </span><span class=w>
+</span><span class=w>        </span><span class=k>with</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=k>registry</span><span class=p>:</span><span class=w> </span>ghcr.io<span class=w>
+</span><span class=w>          </span><span class=k>username</span><span class=p>:</span><span class=w> </span>${{<span class=w> </span>github.repository_owner<span class=w> </span>}}<span class=w>
+</span><span class=w>          </span><span class=k>password</span><span class=p>:</span><span class=w> </span>${{<span class=w> </span>secrets.CR_PAT<span class=w> </span>}}<span class=w>
+</span><span class=w>      </span><span class=sd>-
+</span><span class=sd>        name: Build kea-dhcp4</span><span class=w>
+</span><span class=w>        </span><span class=k>uses</span><span class=p>:</span><span class=w> </span>docker/build-push-action@v2<span class=w>
+</span><span class=w>        </span><span class=k>with</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=k>context</span><span class=p>:</span><span class=w> </span>.<span class=w>
+</span><span class=w>          </span><span class=k>file</span><span class=p>:</span><span class=w> </span>./Dockerfile<span class=w>
+</span><span class=w>          </span><span class=k>platforms</span><span class=p>:</span><span class=w> </span>linux/amd64<span class=p>,</span>linux/arm64<span class=p>,</span>linux/arm<span class=w>
+</span><span class=w>          </span><span class=k>push</span><span class=p>:</span><span class=w> </span><span class=kc>true</span><span class=w>
+</span><span class=w>          </span><span class=k>tags</span><span class=p>:</span><span class=w> </span><span class=sd>|
+</span><span class=sd>            winglim/kea-dhcp4:latest</span><span class=w>
+</span><span class=w>            </span>ghcr.io/winglim/kea-dhcp4<span class=p>:</span>latest<span class=w>
+</span></code></pre></div><p>可以支持的<code>platforms</code>如下</p><ul><li>linux/amd64</li><li>linux/arm64</li><li>linux/riscv64</li><li>linux/ppc64le</li><li>linux/s390x</li><li>linux/386</li><li>linux/arm/v7</li><li>linux/arm/v6</li></ul><p>需要注意的是：在进行跨平台构建时，如果使用了基础镜像，需要确保对应的基础镜像也有对应的架构，否则会构建失败。</p></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/dell-optiplex-5070mff-hackintosh/ title="Previous post (older)"><span>Previous</span>
+戴尔5070MFF黑苹果体验</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.a94f58a30ad2560de728e080d87f75c60cf806fd1b3d5f4815f1a1a02c0d1859.js></script></footer></body></html>
