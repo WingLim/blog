@@ -76,7 +76,7 @@ jobs:
             ghcr.io/winglim/kea-dhcp4:latest
 ```
 
-可以支持的`platforms`如下
+如果你没有对 `docker/setup-qemu-action` 进行设置的话，默认支持的`platforms`如下：
 
 - linux/amd64
 - linux/arm64
@@ -87,5 +87,5 @@ jobs:
 - linux/arm/v7
 - linux/arm/v6
 
-需要注意的是：在进行跨平台构建时，如果使用了基础镜像，需要确保对应的基础镜像也有对应的架构，否则会构建失败。
+需要注意的是：在进行跨平台构建时，如果使用了基础镜像，需要确保对应的**基础镜像**也有对应的架构，否则会构建失败。
 
