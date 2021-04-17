@@ -1,1 +1,862 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Lim's Blog</title><link>/</link><description>Recent content on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Fri, 27 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="/" rel="self" type="application/rss+xml"/><item><title>Posts</title><link>/post/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/</guid><description/></item><item><title>Articles</title><link>/articles/</link><pubDate>Fri, 27 Nov 2020 00:00:00 +0000</pubDate><guid>/articles/</guid><description/></item></channel></rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Lim's Blog</title><link>/</link><description>Recent content on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Fri, 27 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>使用GiHub Actions构建多架构Docker镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>
+&lt;p>Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。&lt;/p>
+&lt;p>但仍存在一个问题，如果你直接使用 &lt;code>docker build&lt;/code> ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 &lt;code>Dockerfile&lt;/code> 拉到虚拟机中进行构建，但这会花费很多时间。&lt;/p>
+&lt;p>通过 GitHub Actions，我们可以在 &lt;code>push&lt;/code> 代码的时候，自动进行多架构的镜像构建，不再需要手动构建并推送到 Docker Hub 等镜像仓库中。&lt;/p>
+&lt;p>下面是一个示例：&lt;/p>
+&lt;p>这是我在 &lt;a href="https://github.com/WingLim/kea-dhcp4">kea-dhcp4&lt;/a> 中使用的 GitHub Actions 构建脚本的一部分&lt;/p>
+&lt;p>要推送到 DockerHub，则需要在 repo 的 sercrets 中设置 DockerHub 的用户名及 TOKEN&lt;/p>
+&lt;p>TOKEN 的生成参考：&lt;a href="https://docs.docker.com/docker-hub/access-tokens/">Managing access tokens&lt;/a>&lt;/p>
+&lt;p>要推送到 GitHub 的镜像仓库，即 ghcr.io 中则需要设置 PAT(Personal Access Token)&lt;/p>
+&lt;p>CR_PAT 的生成参考：&lt;a href="https://docs.github.com/en/packages/guides/migrating-to-github-container-registry-for-docker-images">Migrating to GitHub Container Registry for Docker images&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="k">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>build&lt;span class="w">
+&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">&lt;/span>&lt;span class="k">on&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">push&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">branches&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="w"> &lt;/span>main&lt;span class="w"> &lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">paths-ignore&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;README.md&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">&lt;/span>&lt;span class="k">jobs&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">build&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">runs-on&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>ubuntu-latest&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">steps&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="sd">-
+&lt;/span>&lt;span class="sd"> name: Checkout&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>actions/checkout@v2&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="sd">-
+&lt;/span>&lt;span class="sd"> name: Set up QEMU&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>docker/setup-qemu-action@v1&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="sd">-
+&lt;/span>&lt;span class="sd"> name: Set up Docker Buildx&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>docker/setup-buildx-action@v1&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="sd">-
+&lt;/span>&lt;span class="sd"> name: Login to DockerHub&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>docker/login-action@v1&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">with&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">username&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>${{&lt;span class="w"> &lt;/span>secrets.DOCKERHUB_USERNAME&lt;span class="w"> &lt;/span>}}&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">password&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>${{&lt;span class="w"> &lt;/span>secrets.DOCKERHUB_TOKEN&lt;span class="w"> &lt;/span>}}&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="sd">-
+&lt;/span>&lt;span class="sd"> name: Login to GitHub Container Registry&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>docker/login-action@v1&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># 在 sercrets 中设置 CR_PAT&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># &lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">with&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">registry&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>ghcr.io&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">username&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>${{&lt;span class="w"> &lt;/span>github.repository_owner&lt;span class="w"> &lt;/span>}}&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">password&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>${{&lt;span class="w"> &lt;/span>secrets.CR_PAT&lt;span class="w"> &lt;/span>}}&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="sd">-
+&lt;/span>&lt;span class="sd"> name: Build kea-dhcp4&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>docker/build-push-action@v2&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">with&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">context&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>.&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">file&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>./Dockerfile&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">platforms&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>linux/amd64&lt;span class="p">,&lt;/span>linux/arm64&lt;span class="p">,&lt;/span>linux/arm&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">push&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">tags&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="sd">|
+&lt;/span>&lt;span class="sd"> winglim/kea-dhcp4:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>ghcr.io/winglim/kea-dhcp4&lt;span class="p">:&lt;/span>latest&lt;span class="w">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>可以支持的&lt;code>platforms&lt;/code>如下&lt;/p>
+&lt;ul>
+&lt;li>linux/amd64&lt;/li>
+&lt;li>linux/arm64&lt;/li>
+&lt;li>linux/riscv64&lt;/li>
+&lt;li>linux/ppc64le&lt;/li>
+&lt;li>linux/s390x&lt;/li>
+&lt;li>linux/386&lt;/li>
+&lt;li>linux/arm/v7&lt;/li>
+&lt;li>linux/arm/v6&lt;/li>
+&lt;/ul>
+&lt;p>需要注意的是：在进行跨平台构建时，如果使用了基础镜像，需要确保对应的基础镜像也有对应的架构，否则会构建失败。&lt;/p></description></item><item><title>戴尔5070MFF黑苹果体验</title><link>/post/dell-optiplex-5070mff-hackintosh/</link><pubDate>Wed, 10 Mar 2021 19:09:40 +0800</pubDate><author>WingLim</author><guid>/post/dell-optiplex-5070mff-hackintosh/</guid><description>
+&lt;p>EFI开源托管在GitHub：&lt;a href="https://github.com/WingLim/Dell-Optiplex-5070mff-Hackintosh">Dell-Optiplex-5070mff-Hackintosh&lt;/a>&lt;/p>
+&lt;p>&lt;img src="https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210315163415.png" alt="Tested in Big Sur 11.2.3">&lt;/p>
+&lt;h2 id="配置介绍">配置介绍&lt;/h2>
+&lt;p>硬件配置：&lt;/p>
+&lt;ul>
+&lt;li>准系统: &lt;a href="https://www.dell.com/en-us/work/shop/desktops-all-in-one-pcs/optiplex-5070-micro/spd/optiplex-5070-micro">Dell OptiPlex 5070 Micro Form Factor&lt;/a>&lt;/li>
+&lt;li>CPU: &lt;a href="https://ark.intel.com/content/www/us/en/ark/products/191052/intel-core-i5-9500t-processor-9m-cache-up-to-3-70-ghz.html">Intel® Core™ i5-9500T Processor&lt;/a>&lt;/li>
+&lt;li>核显: Intel® UHD Graphics 630&lt;/li>
+&lt;li>内存: 8GB DDR4 2666 * 2 双通道&lt;/li>
+&lt;li>硬盘: KIOXIA RC10 NVME SSD 500G&lt;/li>
+&lt;li>Wi-Fi &amp;amp; Bluetooth: DW1820A&lt;/li>
+&lt;li>声卡: Realtek ALC255(3234)&lt;/li>
+&lt;li>板载网卡: Intel I219-LM7&lt;/li>
+&lt;/ul>
+&lt;p>接口配置：&lt;/p>
+&lt;p>前面板：&lt;/p>
+&lt;ul>
+&lt;li>通用音频接口&lt;/li>
+&lt;li>有线音频输出&lt;/li>
+&lt;li>Type C(USB3.1 Gen2 PowerShare) 注：不是雷电接口&lt;/li>
+&lt;li>Type-A USB接口(USB 3.1 Gen1 PowerShare)&lt;/li>
+&lt;/ul>
+&lt;p>后面板：&lt;/p>
+&lt;ul>
+&lt;li>RJ-45网线接口&lt;/li>
+&lt;li>Type-A USB接口(USB 3.1 Gen1) * 4&lt;/li>
+&lt;li>DP接口 * 2&lt;/li>
+&lt;/ul>
+&lt;h2 id="正常功能">正常功能&lt;/h2>
+&lt;ul>
+&lt;li>CPU睿频&lt;/li>
+&lt;li>核显加速&lt;/li>
+&lt;li>Airdrop &amp;amp; Airplay &amp;amp; Handoff&lt;/li>
+&lt;li>所有USB接口&lt;/li>
+&lt;li>有线及无线网&lt;/li>
+&lt;li>扬声器 &amp;amp; 通用音频接口 &amp;amp; 有线音频输出&lt;/li>
+&lt;li>睡眠&lt;/li>
+&lt;/ul>
+&lt;h2 id="安装前准备">安装前准备&lt;/h2>
+&lt;p>安装黑苹果前需要使用GRUB，将关闭CFG锁和设置预分配的DVMT内存到64M。&lt;/p>
+&lt;p>将GRUB的&lt;code>EFI&lt;/code>文件夹放入U盘根目录，通过U盘启动，输入如下两行命令：&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-shell" data-lang="shell">// Disable CFG lock
+setup_var 0x5BE 0x00
+// Set Pre-Allocated DVMT to 64M
+setup_var 0x8DC 0x02
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>系统安装镜像请到&lt;a href="https://blog.daliansky.net/">黑果小兵的部落阁&lt;/a>下载&lt;/p>
+&lt;h2 id="遇到的问题">遇到的问题&lt;/h2>
+&lt;ol>
+&lt;li>
+&lt;p>核显驱动&lt;/p>
+&lt;p>戴尔主板的显示总线在&lt;code>1号&lt;/code>和&lt;code>2号&lt;/code>，注入核显型号后还需要注入总线ID，因为主板上只有两个DP接口，所以把&lt;code>con2&lt;/code>屏蔽掉了。但5070MFF主板上有接口可以扩展出新的视频输出，如果有需要需要自己测试。&lt;/p>
+&lt;p>&lt;img src="https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210314204729.png" alt="核显驱动设置">&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>DW1820A的Wi-Fi驱动&lt;/p>
+&lt;p>使用该网卡时需要屏蔽4个pin引脚，屏蔽后插入即可直接驱动Wi-Fi&lt;/p>
+&lt;p>具体需要屏蔽的pin引脚请看，使用胶带进行屏蔽即可：&lt;a href="https://blog.daliansky.net/DW1820A_BCM94350ZAE-driver-inserts-the-correct-posture.html">DW1820A/BCM94350ZAE/BCM94356ZEPA50DX插入的正确姿势&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol></description></item><item><title>C语言项目单元测试实践</title><link>/post/c-unittest-example/</link><pubDate>Tue, 22 Dec 2020 21:50:57 +0800</pubDate><author>WingLim</author><guid>/post/c-unittest-example/</guid><description>
+&lt;h2 id="前言">前言&lt;/h2>
+&lt;p>最近一段时间在写C语言的课程设计，之前在用 Golang 的时候，Golang 自带单元测试，用起来非常舒服，而C语言不使用框架写测试则会很麻烦，下面通过一个简单的项目来实践在C语言中进行单元测试。&lt;/p>
+&lt;p>项目中使用 &lt;a href="https://cmocka.org">CMocka&lt;/a> 作为单元测试框架，使用 &lt;a href="https://about.codecov.io">CodeCov&lt;/a> 检查代码覆盖率。&lt;/p>
+&lt;p>完整项目代码可以在 GitHub 上查看：&lt;a href="https://github.com/WingLim/c-unittest-example">c-unittest-example&lt;/a>&lt;/p>
+&lt;h2 id="项目目录">项目目录&lt;/h2>
+&lt;pre>&lt;code>.
+├── CMakeLists.txt
+├── Makefile
+├── README.md
+├── cmake
+│   ├── CMocka.cmake
+│   └── CodeCov.cmake
+├── include
+│   └── add.h
+├── src
+│   └── add.c
+└── test
+├── CMakeLists.txt
+├── add_tests.c
+└── test.h
+4 directories, 10 files
+&lt;/code>&lt;/pre>&lt;h2 id="目录说明">目录说明&lt;/h2>
+&lt;p>&lt;code>cmake&lt;/code>: 存放 CMake 的模块文件，包括 CMocka 和 CodeCov。&lt;/p>
+&lt;p>&lt;code>include&lt;/code>: 项目头文件
+&lt;code>src&lt;/code>: 项目源代码
+&lt;code>test&lt;/code>: 单元测试代码&lt;/p>
+&lt;h2 id="项目设置文件">项目设置文件&lt;/h2>
+&lt;h3 id="makefile">&lt;code>Makefile&lt;/code>&lt;/h3>
+&lt;p>用于便携执行单元测试和构建程序&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-makefile" data-lang="makefile">&lt;span class="nf">.PHONY&lt;/span>&lt;span class="o">:&lt;/span> &lt;span class="n">cmake&lt;/span> &lt;span class="n">test&lt;/span>
+&lt;span class="nv">BUILD_TYPE&lt;/span> &lt;span class="o">?=&lt;/span> Debug
+&lt;span class="nv">BUILD_DIR&lt;/span> &lt;span class="o">?=&lt;/span> cmake-build-&lt;span class="k">$(&lt;/span>shell &lt;span class="nb">echo&lt;/span> &lt;span class="k">$(&lt;/span>BUILD_TYPE&lt;span class="k">)&lt;/span> &lt;span class="p">|&lt;/span> tr &lt;span class="s1">&amp;#39;[:upper:]&amp;#39;&lt;/span> &lt;span class="s1">&amp;#39;[:lower:]&amp;#39;&lt;/span>&lt;span class="k">)&lt;/span>
+&lt;span class="nv">CODECOV&lt;/span> &lt;span class="o">?=&lt;/span> OFF
+&lt;span class="nv">IWYU&lt;/span> &lt;span class="o">?=&lt;/span> ON
+&lt;span class="nv">TEST_SUITES&lt;/span> &lt;span class="o">=&lt;/span> add_tests
+&lt;span class="c"># 清理文件
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nf">clean&lt;/span>&lt;span class="o">:&lt;/span>
+@rm -rf &lt;span class="k">$(&lt;/span>BUILD_DIR&lt;span class="k">)&lt;/span>
+&lt;span class="c"># 创建 cmake-build-debug，并在里面执行 cmake
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nf">cmake&lt;/span>&lt;span class="o">:&lt;/span>
+@mkdir -p &lt;span class="k">$(&lt;/span>BUILD_DIR&lt;span class="k">)&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> &lt;span class="nb">cd&lt;/span> &lt;span class="k">$(&lt;/span>BUILD_DIR&lt;span class="k">)&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> cmake -DCODE_COVERAGE&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>CODECOV&lt;span class="k">)&lt;/span> -DIWYU&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>IWYU&lt;span class="k">)&lt;/span> -DCMAKE_BUILD_TYPE&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>BUILD_TYPE&lt;span class="k">)&lt;/span> -j &lt;span class="m">4&lt;/span> ..
+&lt;span class="c"># 构建文件
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nf">build&lt;/span>&lt;span class="o">:&lt;/span> &lt;span class="n">cmake&lt;/span>
+@cd &lt;span class="k">$(&lt;/span>BUILD_DIR&lt;span class="k">)&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> make project -j &lt;span class="m">4&lt;/span>
+&lt;span class="c"># 进行单元测试
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nf">test&lt;/span>&lt;span class="o">:&lt;/span>
+@cd &lt;span class="k">$(&lt;/span>BUILD_DIR&lt;span class="k">)&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> make &lt;span class="k">$(&lt;/span>TEST_SUITES&lt;span class="k">)&lt;/span> &lt;span class="nb">test&lt;/span> &lt;span class="nv">CTEST_OUTPUT_ON_FAILURE&lt;/span>&lt;span class="o">=&lt;/span>TRUE
+&lt;span class="c"># 测试代码覆盖率
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nf">coverage&lt;/span>&lt;span class="o">:&lt;/span> &lt;span class="n">test&lt;/span>
+@cd &lt;span class="k">$(&lt;/span>BUILD_DIR&lt;span class="k">)&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> make codecov &lt;span class="nv">CMAKE_BUILD_TYPE&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>BUILD_TYPE&lt;span class="k">)&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="cmakecmockacmake">&lt;code>cmake/CMocka.cmake&lt;/code>&lt;/h3>
+&lt;p>添加 CMocka 到项目中&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-cmake" data-lang="cmake">&lt;span class="nb">include&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">ExternalProject&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 添加额外的项目，即 CMocka
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">ExternalProject_Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">cmocka_ep&lt;/span>
+&lt;span class="s">URL&lt;/span> &lt;span class="s">https://git.cryptomilk.org/projects/cmocka.git/snapshot/cmocka-1.1.5.tar.gz&lt;/span>
+&lt;span class="s">CMAKE_ARGS&lt;/span> &lt;span class="s">-DCMAKE_BUILD_TYPE=&lt;/span>&lt;span class="o">${&lt;/span>&lt;span class="nv">CMAKE_BUILD_TYPE&lt;/span>&lt;span class="o">}&lt;/span>
+&lt;span class="s">-DCMAKE_SYSTEM_NAME=&lt;/span>&lt;span class="o">${&lt;/span>&lt;span class="nv">CMAKE_SYSTEM_NAME&lt;/span>&lt;span class="o">}&lt;/span>
+&lt;span class="s">-DBUILD_STATIC_LIB=ON&lt;/span>
+&lt;span class="s">-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=Debug&lt;/span>
+&lt;span class="s">-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=Release&lt;/span>
+&lt;span class="s">-DUNIT_TESTING=OFF&lt;/span>
+&lt;span class="s">BUILD_COMMAND&lt;/span> &lt;span class="err">$&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">MAKE&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="s">cmocka-static&lt;/span>
+&lt;span class="s">INSTALL_COMMAND&lt;/span> &lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 全局作用域下添加 cmocka 静态库
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">add_library&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">cmocka&lt;/span> &lt;span class="s">STATIC&lt;/span> &lt;span class="s">IMPORTED&lt;/span> &lt;span class="s">GLOBAL&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 获取二进制文件夹路径
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">ExternalProject_Get_Property&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">cmocka_ep&lt;/span> &lt;span class="s">binary_dir&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 分别设置正常、Debug、Release的导入路径
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">set_property&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">TARGET&lt;/span> &lt;span class="s">cmocka&lt;/span> &lt;span class="s">PROPERTY&lt;/span> &lt;span class="s">IMPORTED_LOCATION&lt;/span> &lt;span class="s2">&amp;#34;${binary_dir}/src/libcmocka-static.a&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">set_property&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">TARGET&lt;/span> &lt;span class="s">cmocka&lt;/span> &lt;span class="s">PROPERTY&lt;/span> &lt;span class="s">IMPORTED_LOCATION_DEBUG&lt;/span> &lt;span class="s2">&amp;#34;${binary_dir}/src/Debug/libcmocka-static.a&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">set_property&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">TARGET&lt;/span> &lt;span class="s">cmocka&lt;/span> &lt;span class="s">PROPERTY&lt;/span> &lt;span class="s">IMPORTED_LOCATION_RELEASE&lt;/span> &lt;span class="s2">&amp;#34;${binary_dir}/src/Release/libcmocka-static.a&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 将 cmocka_ep 依赖添加到 cmocka
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">add_dependencies&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">cmocka&lt;/span> &lt;span class="s">cmocka_ep&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 获取 cmocka_ep 的源文件路径
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">ExternalProject_Get_Property&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">cmocka_ep&lt;/span> &lt;span class="s">source_dir&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 全局作用域下设置头文件引入路径
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">set&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CMOCKA_INCLUDE_DIR&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">source_dir&lt;/span>&lt;span class="o">}&lt;/span>&lt;span class="s">/include&lt;/span> &lt;span class="s">GLOBAL&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="cmakecodecovcmake">&lt;code>cmake/CodeCov.cmake&lt;/code>&lt;/h3>
+&lt;p>添加 CodeCov 到项目中&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-cmake" data-lang="cmake">&lt;span class="c"># 寻找 gcovr
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">find_program&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">GCOVR_PATH&lt;/span> &lt;span class="s">gcovr&lt;/span> &lt;span class="s">PATHS&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">CMAKE_SOURCE_DIR&lt;/span>&lt;span class="o">}&lt;/span>&lt;span class="s">/scripts/test&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 设置 CMake 时的参数
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">set&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CMAKE_C_FLAGS_CODECOV&lt;/span> &lt;span class="s2">&amp;#34;-O0 -g --coverage&amp;#34;&lt;/span> &lt;span class="s">CACHE&lt;/span> &lt;span class="s">INTERNAL&lt;/span> &lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 设为高级变量
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">mark_as_advanced&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CMAKE_C_FLAGS_CODECOV&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 确保是在使用 Debug 来构建
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">string&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">TOLOWER&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">CMAKE_BUILD_TYPE&lt;/span>&lt;span class="o">}&lt;/span> &lt;span class="s">current_build_type&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">NOT&lt;/span> &lt;span class="s">current_build_type&lt;/span> &lt;span class="s">STREQUAL&lt;/span> &lt;span class="s2">&amp;#34;debug&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">message&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">WARNING&lt;/span> &lt;span class="s2">&amp;#34;Code coverage results with an optimised (non-Debug) build may be misleading&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">endif&lt;/span> &lt;span class="p">()&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 如果使用的是 GNU 则链接 gcov 库文件
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">CMAKE_C_COMPILER_ID&lt;/span> &lt;span class="s">STREQUAL&lt;/span> &lt;span class="s2">&amp;#34;GNU&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">link_libraries&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">gcov&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">endif&lt;/span> &lt;span class="p">()&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 添加 CodeCov 编译参数到 CMake
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">set&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CMAKE_C_FLAGS&lt;/span> &lt;span class="s2">&amp;#34;${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_CODECOV}&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">message&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">STATUS&lt;/span> &lt;span class="s2">&amp;#34;Appending code coverage compiler flags: ${CMAKE_C_FLAGS_CODECOV}&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 添加自定义 target
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">add_custom_target&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">codecov&lt;/span>
+&lt;span class="s">WORKING_DIRECTORY&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">PROJECT_BINARY_DIR&lt;/span>&lt;span class="o">}&lt;/span>
+&lt;span class="s">COMMENT&lt;/span> &lt;span class="s2">&amp;#34;Generating code cov report at ${PROJECT_BINARY_DIR}/codecov.xml&amp;#34;&lt;/span>
+&lt;span class="c"># 在 SHELL 中展示代码覆盖率总结
+&lt;/span>&lt;span class="c">&lt;/span> &lt;span class="s">COMMAND&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">GCOVR_PATH&lt;/span>&lt;span class="o">}&lt;/span> &lt;span class="s">--exclude-throw-branches&lt;/span> &lt;span class="s">-r&lt;/span> &lt;span class="s">..&lt;/span> &lt;span class="s">--object-directory&lt;/span> &lt;span class="s2">&amp;#34;${PROJECT_BINARY_DIR}&amp;#34;&lt;/span> &lt;span class="s">-e&lt;/span> &lt;span class="s2">&amp;#34;.*/test/.*&amp;#34;&lt;/span> &lt;span class="s">-e&lt;/span> &lt;span class="s2">&amp;#34;.*/usr/.*&amp;#34;&lt;/span> &lt;span class="s">--print-summary&lt;/span>
+&lt;span class="c"># 输出到 codecov.xml
+&lt;/span>&lt;span class="c">&lt;/span> &lt;span class="s">COMMAND&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">GCOVR_PATH&lt;/span>&lt;span class="o">}&lt;/span> &lt;span class="s">--xml&lt;/span> &lt;span class="s">--exclude-throw-branches&lt;/span> &lt;span class="s">-r&lt;/span> &lt;span class="s">..&lt;/span> &lt;span class="s">--object-directory&lt;/span> &lt;span class="s2">&amp;#34;${PROJECT_BINARY_DIR}&amp;#34;&lt;/span> &lt;span class="s">-e&lt;/span> &lt;span class="s2">&amp;#34;.*/test/.*&amp;#34;&lt;/span> &lt;span class="s">-e&lt;/span> &lt;span class="s2">&amp;#34;.*/usr/.*&amp;#34;&lt;/span> &lt;span class="s">-o&lt;/span> &lt;span class="s">codecov.xml&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="cmakeliststxt">&lt;code>CMakeLists.txt&lt;/code>&lt;/h3>
+&lt;p>设置当前项目&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-cmake" data-lang="cmake">&lt;span class="c"># CMake 最低版本要求
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">cmake_minimum_required&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">VERSION&lt;/span> &lt;span class="s">3.17&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 设置 CMake 模块目录
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">set&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CMAKE_MODULE_PATH&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">CMAKE_MODULE_PATH&lt;/span>&lt;span class="o">}&lt;/span> &lt;span class="s2">&amp;#34;${CMAKE_CURRENT_SOURCE_DIR}/cmake&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 项目名
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">project&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">project&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 设置 CodeCov
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">option&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CODE_COVERAGE&lt;/span> &lt;span class="s2">&amp;#34;Enable coverage reporting&amp;#34;&lt;/span> &lt;span class="s">OFF&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">CODE_COVERAGE&lt;/span> &lt;span class="s">AND&lt;/span> &lt;span class="s">CMAKE_C_COMPILER_ID&lt;/span> &lt;span class="s">MATCHES&lt;/span> &lt;span class="s2">&amp;#34;GNU|Clang&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">include&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CodeCov&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">endif&lt;/span> &lt;span class="p">()&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 设置 include-what-you-use
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">option&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">IWYU&lt;/span> &lt;span class="s2">&amp;#34;Run include-what-you-use with the compiler&amp;#34;&lt;/span> &lt;span class="s">OFF&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">IWYU&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="c"># 寻找 iwyu
+&lt;/span>&lt;span class="c">&lt;/span> &lt;span class="nb">find_program&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">IWYU_COMMAND&lt;/span> &lt;span class="s">NAMES&lt;/span> &lt;span class="s">include-what-you-use&lt;/span> &lt;span class="s">iwyu&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="s">NOT&lt;/span> &lt;span class="s">IWYU_COMMAND&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">message&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">FATAL_ERROR&lt;/span> &lt;span class="s2">&amp;#34;CMAKE_IWYU is ON but include-what-you-use is not found!&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">endif&lt;/span> &lt;span class="p">()&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="c"># 添加饮用
+&lt;/span>&lt;span class="c">&lt;/span> &lt;span class="nb">set&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CMAKE_C_INCLUDE_WHAT_YOU_USE&lt;/span> &lt;span class="s2">&amp;#34;${IWYU_COMMAND};-Xiwyu&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">endif&lt;/span> &lt;span class="p">()&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 启用测试
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">enable_testing&lt;/span>&lt;span class="p">()&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 将源码添加到项目
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">add_library&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">project&lt;/span>
+&lt;span class="s">src/add.c&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 设置头文件目录
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">target_include_directories&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">project&lt;/span>
+&lt;span class="s">PUBLIC&lt;/span>
+&lt;span class="o">$&amp;lt;&lt;/span>&lt;span class="nv">INSTALL_INTERFACE:include&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>
+&lt;span class="o">$&amp;lt;&lt;/span>&lt;span class="nv">BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>
+&lt;span class="s">PRIVATE&lt;/span>
+&lt;span class="o">${&lt;/span>&lt;span class="nv">CMAKE_CURRENT_SOURCE_DIR&lt;/span>&lt;span class="o">}&lt;/span>&lt;span class="s">/src&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 添加单元测试子文件
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">add_subdirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">test&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="testcmakeliststxt">&lt;code>test/CMakeLists.txt&lt;/code>&lt;/h3>
+&lt;p>设置项目的单元测试&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-cmake" data-lang="cmake">&lt;span class="c"># 引入 CMocka.cmake
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">include&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">CMocka&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 引入 Cmocka 头文件
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">include_directories&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">${&lt;/span>&lt;span class="nv">CMOCKA_INCLUDE_DIR&lt;/span>&lt;span class="o">}&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="c"># 用于快捷添加测试，_testName 为单元测试的文件名，不带后缀
+&lt;/span>&lt;span class="c">&lt;/span>&lt;span class="nb">function&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">add_test_suite&lt;/span> &lt;span class="s">_testName&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">add_executable&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">${&lt;/span>&lt;span class="nv">_testName&lt;/span>&lt;span class="o">}&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">_testName&lt;/span>&lt;span class="o">}&lt;/span>&lt;span class="s">.c&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">target_link_libraries&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">${&lt;/span>&lt;span class="nv">_testName&lt;/span>&lt;span class="o">}&lt;/span> &lt;span class="s">project&lt;/span> &lt;span class="s">cmocka&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span> &lt;span class="nb">add_test&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">${&lt;/span>&lt;span class="nv">_testName&lt;/span>&lt;span class="o">}&lt;/span> &lt;span class="o">${&lt;/span>&lt;span class="nv">CMAKE_CURRENT_BINARY_DIR&lt;/span>&lt;span class="o">}&lt;/span>&lt;span class="s">/&lt;/span>&lt;span class="o">${&lt;/span>&lt;span class="nv">_testName&lt;/span>&lt;span class="o">}&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">endfunction&lt;/span>&lt;span class="p">()&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">
+&lt;/span>&lt;span class="err">&lt;/span>&lt;span class="nb">add_test_suite&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">add_tests&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="err">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="项目源码">项目源码&lt;/h2>
+&lt;p>这里实现一个可以传可变参数的加法函数。&lt;/p>
+&lt;h3 id="addh">&lt;code>add.h&lt;/code>&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cp">#ifndef PROJECT_ADD_H
+&lt;/span>&lt;span class="cp">#define PROJECT_ADD_H
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">...);&lt;/span>
+&lt;span class="cp">#endif &lt;/span>&lt;span class="c1">//PROJECT_TEST_H
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="addc">&lt;code>add.c&lt;/code>&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;#34;add.h&amp;#34;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;stdarg.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">...)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="n">va_list&lt;/span> &lt;span class="n">arg_ptr&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">va_start&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">arg_ptr&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">count&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="o">++&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">tmp&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">va_arg&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">arg_ptr&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">sum&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="n">tmp&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">va_end&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">arg_ptr&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="n">sum&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="testtesth">&lt;code>test/test.h&lt;/code>&lt;/h3>
+&lt;p>引入 CMocka 所需的头文件&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cp">#ifndef PROJECT_TEST_H
+&lt;/span>&lt;span class="cp">#define PROJECT_TEST_H
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;stdarg.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;stddef.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;setjmp.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;cmocka.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">run_all_tests&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="n">run_all_tests&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="cp">#endif &lt;/span>&lt;span class="c1">//PROJECT_TEST_H
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="testadd_testsc">&lt;code>test/add_tests.c&lt;/code>&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;#34;test.h&amp;#34;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;#34;add.h&amp;#34;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">void&lt;/span> &lt;span class="nf">test_add_1&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="n">state&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">assert_int_equal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sum&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">void&lt;/span> &lt;span class="nf">test_add_2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="n">state&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">assert_int_equal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sum&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">void&lt;/span> &lt;span class="nf">test_add_more&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="n">state&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">6&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">6&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">assert_int_equal&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">21&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sum&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">run_all_tests&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">const&lt;/span> &lt;span class="k">struct&lt;/span> &lt;span class="n">CMUnitTest&lt;/span> &lt;span class="n">tests&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="n">cmocka_unit_test&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">test_add_1&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;span class="n">cmocka_unit_test&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">test_add_2&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;span class="n">cmocka_unit_test&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">test_add_more&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;span class="p">};&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="n">cmocka_run_group_tests&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">tests&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">NULL&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">NULL&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="进行测试">进行测试&lt;/h2>
+&lt;p>项目根目录下执行&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="nv">CODECOV&lt;/span>&lt;span class="o">=&lt;/span>ON &lt;span class="nv">IWYU&lt;/span>&lt;span class="o">=&lt;/span>OFF make cmake coverage
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>执行效果如下&lt;img src="/images/image-20201222220536632.png" alt="image-20201222220536632">&lt;/p>
+&lt;p>到 &lt;a href="https://about.codecov.io">CodeCov&lt;/a> 上创建项目，获取 TOKEN，执行如下命令上传测试报告&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;YOUR TOKEN&amp;#34;&lt;/span> &amp;gt; .cc_token
+bash &amp;lt;&lt;span class="o">(&lt;/span>curl -s https://codecov.io/bash&lt;span class="o">)&lt;/span> -f cmake-build-debug/codecov.xml -t @.cc_token
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>项目也可以使用 GitHub Actions 进行自动化构建和上传&lt;/p>
+&lt;p>在项目中设置 &lt;code>secrets.CODECOV_TOKEN&lt;/code> 即可，详细设置可以查看 &lt;code>.github/workflows/workflow.yml&lt;/code>&lt;/p></description></item><item><title>Linux Kernel 实践(二)：劫持系统调用</title><link>/post/linux-kernel-practice-hijack-syscall/</link><pubDate>Fri, 06 Mar 2020 23:17:11 +0800</pubDate><author>WingLim</author><guid>/post/linux-kernel-practice-hijack-syscall/</guid><description>
+&lt;p>通过劫持系统调用表，将原有系统调用替换成自定义系统调用。&lt;/p>
+&lt;p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic&lt;/p>
+&lt;p>劫持系统调用有风险，请不要在实体机上尝试。&lt;/p>
+&lt;h2 id="前言">前言&lt;/h2>
+&lt;p>添加系统调用有两种方法&lt;/p>
+&lt;ul>
+&lt;li>修改内核源代码，并重新编译内核&lt;/li>
+&lt;/ul>
+&lt;p>这种耗时耗力，比较麻烦，但是是在原有的系统调用中插入新的系统调用，不会出现冲突等问题。&lt;/p>
+&lt;ul>
+&lt;li>通过内核模块重新映射系统调用地址&lt;/li>
+&lt;/ul>
+&lt;p>通过拦截系统调用表，将某个系统调用的地址修改成我们自定义的系统系统调用。&lt;/p>
+&lt;h2 id="什么是系统调用表">什么是系统调用表&lt;/h2>
+&lt;p>在 Linux 中每个系统调用都有相应的系统调用号作为唯一的标识，内核维护一张系统调用表：&lt;code>sys_call_table&lt;/code>。&lt;/p>
+&lt;p>在 64 位系统中，&lt;code>sys_call_table&lt;/code> 的定义在 &lt;a href="https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscall_64.c#L25">entry/syscall_64.c#L25&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="n">asmlinkage&lt;/span> &lt;span class="k">const&lt;/span> &lt;span class="n">sys_call_ptr_t&lt;/span> &lt;span class="n">sys_call_table&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">__NR_syscall_max&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span> &lt;span class="p">...&lt;/span> &lt;span class="n">__NR_syscall_max&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">sys_ni_syscall&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;asm/syscalls_64.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>&lt;span class="p">};&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>其中 &lt;code>#include &amp;lt;asm/syscalls_64.h&amp;gt;&lt;/code> 是通过 &lt;a href="https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/Makefile#L50">entry/syscalls/Makefile&lt;/a> 以 &lt;a href="https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscall_64.tbl">entry/syscalls/syscall_64.tbl&lt;/a> 为源文件编译生成的。&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-makefile" data-lang="makefile">&lt;span class="nv">out&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="k">$(&lt;/span>obj&lt;span class="k">)&lt;/span>/../../include/generated/asm
+&lt;span class="nv">syscall64&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="k">$(&lt;/span>srctree&lt;span class="k">)&lt;/span>/&lt;span class="k">$(&lt;/span>src&lt;span class="k">)&lt;/span>/syscall_64.tbl
+&lt;span class="nv">systbl&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="k">$(&lt;/span>srctree&lt;span class="k">)&lt;/span>/&lt;span class="k">$(&lt;/span>src&lt;span class="k">)&lt;/span>/syscalltbl.sh
+&lt;span class="nf">$(out)/syscalls_64.h&lt;/span>&lt;span class="o">:&lt;/span> &lt;span class="k">$(&lt;/span>&lt;span class="nv">syscall&lt;/span>64&lt;span class="k">)&lt;/span> &lt;span class="k">$(&lt;/span>&lt;span class="nv">systbl&lt;/span>&lt;span class="k">)&lt;/span>
+&lt;span class="k">$(&lt;/span>call if_changed,systbl&lt;span class="k">)&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Makefile 通过 &lt;a href="https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh">entry/syscalls/syscalltbl.sh&lt;/a> 将 &lt;code>syscall_64.tbl&lt;/code> 格式化成 &lt;code>__SYSCALL_${abi}($nr, $entry, $compat)&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="cp">#!/bin/sh
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="nv">in&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$1&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;span class="nv">out&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$2&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+grep &lt;span class="s1">&amp;#39;^[0-9]&amp;#39;&lt;/span> &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$in&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="p">|&lt;/span> sort -n &lt;span class="p">|&lt;/span> &lt;span class="o">(&lt;/span>
+&lt;span class="k">while&lt;/span> &lt;span class="nb">read&lt;/span> nr abi name entry compat&lt;span class="p">;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;span class="nv">abi&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="sb">`&lt;/span>&lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$abi&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="p">|&lt;/span> tr &lt;span class="s1">&amp;#39;[a-z]&amp;#39;&lt;/span> &lt;span class="s1">&amp;#39;[A-Z]&amp;#39;&lt;/span>&lt;span class="sb">`&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="o">[&lt;/span> -n &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$compat&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="o">]&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">then&lt;/span>
+&lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;__SYSCALL_&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nv">abi&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">(&lt;/span>&lt;span class="nv">$nr&lt;/span>&lt;span class="s2">, &lt;/span>&lt;span class="nv">$entry&lt;/span>&lt;span class="s2">, &lt;/span>&lt;span class="nv">$compat&lt;/span>&lt;span class="s2">)&amp;#34;&lt;/span>
+&lt;span class="k">elif&lt;/span> &lt;span class="o">[&lt;/span> -n &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$entry&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="o">]&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">then&lt;/span>
+&lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;__SYSCALL_&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nv">abi&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">(&lt;/span>&lt;span class="nv">$nr&lt;/span>&lt;span class="s2">, &lt;/span>&lt;span class="nv">$entry&lt;/span>&lt;span class="s2">, &lt;/span>&lt;span class="nv">$entry&lt;/span>&lt;span class="s2">)&amp;#34;&lt;/span>
+&lt;span class="k">fi&lt;/span>
+&lt;span class="k">done&lt;/span>
+&lt;span class="o">)&lt;/span> &amp;gt; &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$out&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>生成后的 &lt;code>syscall_64.h&lt;/code> 内容截取如下：&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="n">__SYSCALL_COMMON&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sys_read&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sys_read&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="n">__SYSCALL_COMMON&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sys_write&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">sys_write&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>再看回 &lt;code>entry/syscall_64.c&lt;/code>：&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cp">#define __SYSCALL_COMMON(nr, sym, compat) __SYSCALL_64(nr, sym, compat)
+&lt;/span>&lt;span class="cp">#define __SYSCALL_64(nr, sym, compat) [nr] = sym,
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>所以可以得到 &lt;code>sys_call_table&lt;/code> 的展开如下：&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="n">asmlinkage&lt;/span> &lt;span class="k">const&lt;/span> &lt;span class="n">sys_call_ptr_t&lt;/span> &lt;span class="n">sys_call_table&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">__NR_syscall_max&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span> &lt;span class="p">...&lt;/span> &lt;span class="n">__NR_syscall_max&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">sys_ni_syscall&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">sys_read&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">sys_write&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="p">...&lt;/span>
+&lt;span class="p">};&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>所以可以把 &lt;code>sys_call_table&lt;/code> 看作一个数组，索引为系统调用号，值为系统调用函数的起始地址。&lt;/p>
+&lt;h2 id="获取-sys_call_table-地址">获取 sys_call_table 地址&lt;/h2>
+&lt;ol>
+&lt;li>通过 &lt;code>/boot/System.map&lt;/code> 获取&lt;/li>
+&lt;li>通过 &lt;code>/proc/kallsyms&lt;/code> 获取&lt;/li>
+&lt;li>通过暴力搜索获取&lt;/li>
+&lt;/ol>
+&lt;p>前面两种方式基本一致，都是通过读取文件并过滤的方式获取。&lt;/p>
+&lt;p>&lt;code>/boot/System.map&lt;/code> 包含整个内核镜像的符号表。&lt;/p>
+&lt;p>&lt;code>/proc/kallsyms&lt;/code> 不仅包含内核镜像符号表，还包含所有动态加载模块的符号表。&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="c1"># /boot/System.map&lt;/span>
+root@0xDayServer:~# cat /boot/System.map-&lt;span class="k">$(&lt;/span>uname -r&lt;span class="k">)&lt;/span> &lt;span class="p">|&lt;/span> grep sys_call_table
+ffffffff81a001c0 R sys_call_table
+ffffffff81a01520 R ia32_sys_call_table
+&lt;span class="c1"># /proc/kallsyms&lt;/span>
+root@0xDayServer:~# cat /proc/kallsyms &lt;span class="p">|&lt;/span> grep sys_call_table
+ffffffff81a001c0 R sys_call_table
+ffffffff81a01520 R ia32_sys_call_table
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果要在 LKM 中 使用的话，可以将地址写在宏定义上，再进行调用。&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cp">#define SYS_CALL_TABLE ffffffff81a001c0
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>但在不同的系统上都得进行修改并重新编译，非常麻烦。&lt;/p>
+&lt;h3 id="暴力搜索">暴力搜索&lt;/h3>
+&lt;p>&lt;strong>注意：在 Linux 内核 v4.17及之后 &lt;code>sys_close&lt;/code> 就不再被导出。&lt;/strong>&lt;/p>
+&lt;p>前面提到 &lt;code>sys_call_table&lt;/code> 是一个数组，索引为系统调用号，值为系统调用函数的起始地址。&lt;/p>
+&lt;p>内核内存空间的起始地址 &lt;code>PAGE_OFFSET&lt;/code> 变量和 &lt;code>sys_close&lt;/code> 系统调用在内核模块中是可见的。系统调用号在同一&lt;a href="https://en.wikipedia.org/wiki/Application_binary_interface">ABI&lt;/a>（x86与x64属于不同ABI）中是高度后向兼容的，可以直接引用（如 &lt;code>__NR_close&lt;/code> ）。我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 &lt;code>sys_call_table&lt;/code> 的地址，并用 &lt;code>__NR_close&lt;/code> 索引去访问它的成员，如果这个值与 &lt;code>sys_close&lt;/code> 的地址相同的话，就可以认为找到了 &lt;code>sys_call_table&lt;/code> 的地址。&lt;/p>
+&lt;p>更多有关 &lt;code>PAGE_OFFSET&lt;/code> 的内容请看：[ARM64 Linux 内核虚拟地址空间](&lt;a href="https://geneblue.github.io/2017/04/02/ARM64">https://geneblue.github.io/2017/04/02/ARM64&lt;/a> Linux 内核虚拟地址空间/)&lt;/p>
+&lt;p>下面来看搜索 &lt;code>sys_call_table&lt;/code> 的函数：&lt;/p>
+&lt;p>&lt;code>ULONG_MAX&lt;/code> 为 0xFFFFFFFFUL，即 &lt;code>unsigned long&lt;/code> 的最大值&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="nf">get_sys_call_table&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="n">entry&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">PAGE_OFFSET&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="p">(;(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">entry&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">ULONG_MAX&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">entry&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">entry&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">__NR_close&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">sys_close&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="n">entry&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="nb">NULL&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="劫持系统调用">劫持系统调用&lt;/h2>
+&lt;h3 id="写保护">写保护&lt;/h3>
+&lt;p>当我们获取到了 &lt;code>sys_call_table&lt;/code> 的地址时，并不能直接进行操作，会报错且无法写入，因为在内存中有写保护，这个特性可以通过 &lt;a href="https://en.wikipedia.org/wiki/Control_register#CR0">CR0&lt;/a> 寄存器控制。&lt;/p>
+&lt;p>CR0 的第16位比特是写保护，设置时，即使权限级别为0（Linux 有4个权限级别，从0到3，0为最高级。等级0也被称为内核模式），也不能写入只读页。&lt;/p>
+&lt;p>我们可以通过 &lt;a href="https://elixir.bootlin.com/linux/v4.4/ident/read_cr0">read_cr0&lt;/a> 和 &lt;a href="https://elixir.bootlin.com/linux/v4.4/ident/write_cr0">write_cr0&lt;/a> 这两个函数，来读取和写入 CR0，同时通过 Linux 内核提供的接口 &lt;a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-set-bit.html">set_bit&lt;/a> 和 &lt;a href="https://www.kernel.org/doc/htmldocs/kernel-api/API-clear-bit.html">clear_bit&lt;/a> 来操作比特。&lt;/p>
+&lt;p>关闭写保护，将第16个比特置为0。&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="kt">void&lt;/span> &lt;span class="nf">disable_write_protection&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="n">cr0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">read_cr0&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">clear_bit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">16&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">write_cr0&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>开启写保护，将第16个比特置为1。&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="kt">void&lt;/span> &lt;span class="nf">enable_write_protection&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="n">cr0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">read_cr0&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">set_bit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">16&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">write_cr0&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="模块代码">模块代码&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cm">/**
+&lt;/span>&lt;span class="cm"> * @file nice.c
+&lt;/span>&lt;span class="cm"> * @author WingLim
+&lt;/span>&lt;span class="cm"> * @date 2020-03-05
+&lt;/span>&lt;span class="cm"> * @version 0.1
+&lt;/span>&lt;span class="cm"> * @brief 读取及修改一个进程的 nice 值，并返回最新的 nice 值及优先级 prio 的模块化实现
+&lt;/span>&lt;span class="cm">*/&lt;/span>
+&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/init.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/kernel.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/module.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>&lt;span class="c1">// 下面这些头文件为自定义系统调用要用到的
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/pid.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/sched.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/syscalls.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/uaccess.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/unistd.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="c1">// 这里是随便挑了一个系统调用来劫持，224 为 timer_gettime
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="cp">#define the_syscall_num 224
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="n">MODULE_LICENSE&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;GPL&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_AUTHOR&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;WingLim&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_DESCRIPTION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;A module to read or set nice value&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_VERSION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;0.1&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="c1">// 用于保存 sys_call_table 地址
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="n">sys_call_table&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="c1">// 用于保存被劫持的系统调用
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="k">static&lt;/span> &lt;span class="nf">int&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="n">anything_saved&lt;/span>&lt;span class="p">)(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="c1">// 从内核起始地址开始搜索内存空间来获得 sys_call_table 的内存地址
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="nf">get_sys_call_table&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="n">entry&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">**&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">PAGE_OFFSET&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="p">(;(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">entry&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">ULONG_MAX&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">entry&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">entry&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">__NR_close&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">sys_close&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="n">entry&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="nb">NULL&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="kt">void&lt;/span> &lt;span class="nf">disable_write_protection&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="n">cr0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">read_cr0&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">clear_bit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">16&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">write_cr0&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="kt">void&lt;/span> &lt;span class="nf">enable_write_protection&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="n">cr0&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">read_cr0&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">set_bit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">16&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">write_cr0&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cr0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="c1">// 这个是用来获取进程的 prio，代码来自 task_prio
+&lt;/span>&lt;span class="c1">// 因为这个函数没有导出，所以拷贝一份到源码里
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="nf">get_prio&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">const&lt;/span> &lt;span class="k">struct&lt;/span> &lt;span class="n">task_struct&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="n">p&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="o">-&amp;gt;&lt;/span>&lt;span class="n">prio&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">MAX_RT_PRIO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">asmlinkage&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="nf">sys_setnice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">pid_t&lt;/span> &lt;span class="n">pid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">flag&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">nicevalue&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">__user&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">__user&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">nice&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">struct&lt;/span> &lt;span class="n">pid&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">kpid&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">struct&lt;/span> &lt;span class="n">task_struct&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">task&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">nicebef&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">priobef&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">kpid&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">find_get_pid&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">pid&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 获取 pid
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">task&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">pid_task&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">kpid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">PIDTYPE_PID&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 返回 task_struct
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">nicebef&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">task_nice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">task&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 获取进程当前 nice 值
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">priobef&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">get_prio&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">task&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 获取进程当前 prio 值
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="k">if&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">flag&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">set_user_nice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">task&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">nicevalue&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;nice value edit before：%d&lt;/span>&lt;span class="se">\t&lt;/span>&lt;span class="s">edit after：%d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">nicebef&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">nicevalue&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">else&lt;/span> &lt;span class="k">if&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">flag&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">copy_to_user&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">const&lt;/span> &lt;span class="kt">void&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">nicebef&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">sizeof&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">nicebef&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">copy_to_user&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">const&lt;/span> &lt;span class="kt">void&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">priobef&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">sizeof&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">priobef&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;nice of the process：%d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">nicebef&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;prio of the process：%d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">priobef&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;the flag is undefined!&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="n">EFAULT&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">__init&lt;/span> &lt;span class="nf">init_addsyscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="c1">// 关闭写保护
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">disable_write_protection&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="c1">// 获取系统调用表的地址
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">sys_call_table&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">get_sys_call_table&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="c1">// 保存原始系统调用的地址
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">anything_saved&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="p">)(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">sys_call_table&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">the_syscall_num&lt;/span>&lt;span class="p">]);&lt;/span>
+&lt;span class="c1">// 将原始的系统调用劫持为自定义系统调用
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">sys_call_table&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">the_syscall_num&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">sys_setnice&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="c1">// 恢复写保护
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">enable_write_protection&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;hijack syscall success&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">void&lt;/span> &lt;span class="n">__exit&lt;/span> &lt;span class="nf">exit_addsyscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// 关闭写保护
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">disable_write_protection&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="c1">// 恢复原来的系统调用
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">sys_call_table&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">the_syscall_num&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">unsigned&lt;/span> &lt;span class="kt">long&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">anything_saved&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="c1">// 恢复写保护
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">enable_write_protection&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;resume syscall&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">module_init&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">init_addsyscall&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">module_exit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">exit_addsyscall&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="添加-makefile">添加 &lt;code>Makefile&lt;/code>&lt;/h4>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-makefile" data-lang="makefile">&lt;span class="nv">obj-m&lt;/span>&lt;span class="o">+=&lt;/span>nice.o
+&lt;span class="nv">KDIR&lt;/span> &lt;span class="o">=&lt;/span> /lib/modules/&lt;span class="k">$(&lt;/span>shell uname -r&lt;span class="k">)&lt;/span>/build
+&lt;span class="nf">all&lt;/span>&lt;span class="o">:&lt;/span>
+make -C &lt;span class="k">$(&lt;/span>KDIR&lt;span class="k">)&lt;/span> &lt;span class="nv">M&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>PWD&lt;span class="k">)&lt;/span> modules
+&lt;span class="nf">clean&lt;/span>&lt;span class="o">:&lt;/span>
+make -C &lt;span class="k">$(&lt;/span>KDIR&lt;span class="k">)&lt;/span> &lt;span class="nv">M&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>PWD&lt;span class="k">)&lt;/span> clean
+&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="编译模块并启用">编译模块并启用&lt;/h4>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="c1"># 编译&lt;/span>
+root@0xDayServer:~/dev/kernel/nice# make
+make -C /lib/modules/4.4.0-93-generic/build/ &lt;span class="nv">M&lt;/span>&lt;span class="o">=&lt;/span>/root/dev/kernel/nice modules
+make&lt;span class="o">[&lt;/span>1&lt;span class="o">]&lt;/span>: Entering directory &lt;span class="sb">`&lt;/span>/usr/src/linux-headers-4.4.0-93-generic&lt;span class="s1">&amp;#39;
+&lt;/span>&lt;span class="s1"> CC [M] /root/dev/kernel/nice/nice.o
+&lt;/span>&lt;span class="s1"> Building modules, stage 2.
+&lt;/span>&lt;span class="s1"> MODPOST 1 modules
+&lt;/span>&lt;span class="s1"> CC /root/dev/kernel/nice/nice.mod.o
+&lt;/span>&lt;span class="s1"> LD [M] /root/dev/kernel/nice/nice.ko
+&lt;/span>&lt;span class="s1">make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic&amp;#39;&lt;/span>
+&lt;span class="c1"># 插入模块&lt;/span>
+root@0xDayServer:~/dev/kernel/nice# insmod nice.ko
+&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="模块测试代码">模块测试代码&lt;/h4>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cm">/*test.c*/&lt;/span>
+&lt;span class="cp">#define _GNU_SOURCE
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;unistd.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;sys/syscall.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;stdio.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#define __NR_mysetnice 224 &lt;/span>&lt;span class="c1">//系统调用号
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="n">pid_t&lt;/span> &lt;span class="n">tid&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">nicevalue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">prio&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">nice&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">tid&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">getpid&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">syscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">__NR_mysetnice&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="c1">//read
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;pid: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">prio: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">nice: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">syscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">__NR_mysetnice&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="c1">//set
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;pid: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">prio: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">nice: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">syscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">__NR_mysetnice&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="c1">//read
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;pid: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">prio: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">nice: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;*******************************&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">syscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">__NR_mysetnice&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">15&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="c1">//read
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;pid: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">prio: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">nice: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">syscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">__NR_mysetnice&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">15&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="c1">//set
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;pid: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">prio: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">nice: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">syscall&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">__NR_mysetnice&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="mi">15&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="c1">//read
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;pid: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">prio: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">nice: %d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">tid&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">prio&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="n">nice&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="编译测试代码并测试">编译测试代码并测试&lt;/h4>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="c1"># 编译 test.c&lt;/span>
+root@0xDayServer:~/dev/kernel/nice# gcc test.c -o &lt;span class="nb">test&lt;/span>
+&lt;span class="c1"># 执行&lt;/span>
+root@0xDayServer:~/dev/kernel/nice# ./test
+pid: &lt;span class="m">12872&lt;/span>
+prio: &lt;span class="m">20&lt;/span>
+nice: &lt;span class="m">0&lt;/span>
+pid: &lt;span class="m">12872&lt;/span>
+prio: &lt;span class="m">20&lt;/span>
+nice: &lt;span class="m">0&lt;/span>
+pid: &lt;span class="m">12872&lt;/span>
+prio: &lt;span class="m">15&lt;/span>
+nice: -5
+*******************************
+pid: &lt;span class="m">12872&lt;/span>
+prio: &lt;span class="m">15&lt;/span>
+nice: -5
+pid: &lt;span class="m">12872&lt;/span>
+prio: &lt;span class="m">15&lt;/span>
+nice: -5
+pid: &lt;span class="m">12872&lt;/span>
+prio: &lt;span class="m">5&lt;/span>
+nice: -15
+&lt;span class="c1"># 查看模块输出信息&lt;/span>
+root@0xDayServer:~/dev/kernel/nice# tail /var/log/kern.log
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435431&lt;span class="o">]&lt;/span> nice of the process：0
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435434&lt;span class="o">]&lt;/span> prio of the process：20
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435466&lt;span class="o">]&lt;/span> nice value edit before：0 edit after：-5
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435475&lt;span class="o">]&lt;/span> nice of the process：-5
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435476&lt;span class="o">]&lt;/span> prio of the process：15
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435481&lt;span class="o">]&lt;/span> nice of the process：-5
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435481&lt;span class="o">]&lt;/span> prio of the process：15
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435485&lt;span class="o">]&lt;/span> nice value edit before：-5 edit after：-15
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435494&lt;span class="o">]&lt;/span> nice of the process：-15
+Mar &lt;span class="m">7&lt;/span> 03:52:47 0xDayServer kernel: &lt;span class="o">[&lt;/span>118009.435495&lt;span class="o">]&lt;/span> prio of the process：5
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="尾语">尾语&lt;/h2>
+&lt;p>这里提到的劫持系统调用，是 RootKit 中的一部分，RootKit 是一组工具，目标是隐藏它自身存在并继续向攻击者提供系统访问。所以我们可以通过劫持系统调用来做一些更有趣的事情，比如劫持 &lt;code>sys_open&lt;/code> 来监视文件的创建。&lt;/p>
+&lt;p>同时，获取 &lt;code>sys_call_table&lt;/code> 也有很多其他方式，比如 IDT（Interrupt Descriptor Table）、MSRs（Model-Specific Registers）在参考三中有它们的实现方式，总之，Linux Kernel 还挺有趣的，接下来再继续探索更多可玩的地方。&lt;/p>
+&lt;h2 id="参考">参考&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://zhuanlan.zhihu.com/p/55214097">Linux系统调用流程&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://docs-conquer-the-universe.readthedocs.io/zh_CN/latest/linux_rootkit/sys_call_table.html">Linux Rootkit 系列二：基于修改 sys_call_table 的系统调用挂钩&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://github.com/oblique/articles/blob/master/kernel_mode_hooking/tutorial.english.txt">Kernel Mode Hooking Tutorial&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://zhuanlan.zhihu.com/p/31342840">OS 实验一 | linux 内核编译及添加系统调用&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>Linux Kernel 实践(一)：Hello LKM</title><link>/post/linux-kernel-practice-hello/</link><pubDate>Fri, 06 Mar 2020 18:18:09 +0800</pubDate><author>WingLim</author><guid>/post/linux-kernel-practice-hello/</guid><description>
+&lt;p>实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息。&lt;/p>
+&lt;p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic&lt;/p>
+&lt;h2 id="什么是内核模块">什么是内核模块&lt;/h2>
+&lt;p>Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加载到内存中，无须重新编译内核。所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。&lt;/p>
+&lt;p>内核模块和一般的 C 语言程序不同，它不使用 &lt;code>main()&lt;/code> 函数作为入口，并且有如下区别：&lt;/p>
+&lt;ul>
+&lt;li>非顺序执行：内核模块使用初始化函数来进行注册，并处理请求，初始化函数运行后就结束了。 它可以处理的请求类型在模块代码中定义。&lt;/li>
+&lt;li>没有自动清理：内核模块申请的所有内存，必须要在模块卸载时手动释放，否则这些内存会无法使用，直到重启，也就是说我们需要在模块的卸载函数（也就是下文写到的退出函数）中，将使用的内存逐一释放。&lt;/li>
+&lt;li>会被中断：内核模块可能会同时被多个程序/进程使用，构建内核模块时要确保发生中断时行为一致和正确。想了解更多请看：&lt;a href="https://www.cnblogs.com/linfeng-learning/p/9512866.html">Linux 内核的中断机制&lt;/a>&lt;/li>
+&lt;li>更高级的执行特权：通常分配给内核模块的CPU周期比分配给用户空间程序的要多。编写内核模块时要小心，以免模块对系统的整体性能产生负面影响。&lt;/li>
+&lt;li>不支持浮点：在Linux内核里无法直接进行浮点计算，因为这样做可以省去在用户态与内核态之间进行切换时保存/恢复浮点寄存器 FPU的操作。&lt;/li>
+&lt;/ul>
+&lt;h2 id="构建前的准备">构建前的准备&lt;/h2>
+&lt;p>通过包管理安装 Linux 内核头文件&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">$ sudo apt update
+$ apt-cache search linux-headers-&lt;span class="k">$(&lt;/span>uname -r&lt;span class="k">)&lt;/span>
+$ apt install linux-headers-&lt;span class="k">$(&lt;/span>uname -r&lt;span class="k">)&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="开始写代码">开始写代码&lt;/h2>
+&lt;h3 id="引入头文件">引入头文件&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/init.h&amp;gt; // 用于标记函数的宏&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/module.h&amp;gt; //加载内核模块到内核使用的核心头文件&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/kernel.h&amp;gt; // 包含内核使用的类型、宏和函数&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="定义模块信息">定义模块信息&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="n">MODULE_LICENSE&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;GPL&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 许可类型，它会影响到运行时行为
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="n">MODULE_AUTHOR&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;WingLim&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 作者，当使用 modinfo 命令时可见
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="n">MODULE_DESCRIPTION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;A simple Linux driver to say hello.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 模块描述，参见 modinfo 命令
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="n">MODULE_VERSION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;0.1&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 模块版本
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果没有定义 &lt;code>MODULE_LICENSE&lt;/code> ，在编译和加载模块时会报 &lt;code>WARNING: modpost: missing MODULE_LICENSE()&lt;/code>&lt;/p>
+&lt;p>&lt;code>MODULE_LICENSE&lt;/code> 可以选用 “GPL”，“GPL v2”，“GPL and additional rights”，“Dual BSD/GPL”，“Dual MPL/GPL”，“Proprietary” 这几个许可证。更多说明请看：&lt;a href="https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L209">linux/module.h#L209&lt;/a>&lt;/p>
+&lt;h3 id="初始化函数">初始化函数&lt;/h3>
+&lt;p>&lt;code>static&lt;/code> 限制这个函数的可见范围为当前 C 文件&lt;/p>
+&lt;p>&lt;code>__init&lt;/code> 表示该函数仅在初始化阶段使用，之后释放使用的内存资源：&lt;a href="https://elixir.bootlin.com/linux/v4.4/source/include/linux/init.h#L7">init.h#L7&lt;/a>&lt;/p>
+&lt;p>&lt;code>@return&lt;/code> 执行成功返回 0&lt;/p>
+&lt;p>在内核中我们使用 &lt;code>printk()&lt;/code> 来打印信息.。&lt;code>printk()&lt;/code> 和 &lt;code>printf()&lt;/code> 语法一样，但需要先定义消息类型。可用的消息类型可以到 &lt;a href="https://elixir.bootlin.com/linux/v4.4/source/include/linux/kern_levels.h#L7">linux/kern_levels.h#L7-#L23&lt;/a> 查看&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="k">static&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">__init&lt;/span> &lt;span class="nf">helloModule_init&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">KERN_INFO&lt;/span> &lt;span class="s">&amp;#34;Hello LKM!&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="退出函数">退出函数&lt;/h3>
+&lt;p>&lt;code>__exit&lt;/code> 表示如果这个代码用于一个内置的驱动程序(而不是LKM)，则不需要这个函数。&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="k">static&lt;/span> &lt;span class="kt">void&lt;/span> &lt;span class="n">__exit&lt;/span> &lt;span class="nf">helloModule_exit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">KERN_INFO&lt;/span> &lt;span class="s">&amp;#34;Goodbye LKM!&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="初始化退出模块">初始化&amp;amp;退出模块&lt;/h3>
+&lt;p>定义在 &lt;a href="https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L75">linux/module.h#L75-#L98&lt;/a>&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="n">module_init&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">helloModule_init&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">module_exit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">helloModule_exit&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="汇总">汇总&lt;/h4>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cm">/*hello.c*/&lt;/span>
+&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/init.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/module.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/kernel.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="n">MODULE_LICENSE&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;GPL&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_AUTHOR&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;WingLim&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_DESCRIPTION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;A simple Linux driver to say hello.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_VERSION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;0.1&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">__init&lt;/span> &lt;span class="nf">helloModule_init&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">KERN_INFO&lt;/span> &lt;span class="s">&amp;#34;Hello LKM!&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">void&lt;/span> &lt;span class="n">__exit&lt;/span> &lt;span class="nf">helloModule_exit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">KERN_INFO&lt;/span> &lt;span class="s">&amp;#34;Goodbye LKM!&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">module_init&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">helloModule_init&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">module_exit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">helloModule_exit&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="编译">编译&lt;/h2>
+&lt;p>添加 &lt;code>Makefile&lt;/code>&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-makefile" data-lang="makefile">&lt;span class="nv">obj-m&lt;/span>&lt;span class="o">+=&lt;/span>hello.o
+&lt;span class="nv">KDIR&lt;/span> &lt;span class="o">=&lt;/span> /lib/modules/&lt;span class="k">$(&lt;/span>shell uname -r&lt;span class="k">)&lt;/span>/build
+&lt;span class="nf">all&lt;/span>&lt;span class="o">:&lt;/span>
+make -C &lt;span class="k">$(&lt;/span>KDIR&lt;span class="k">)&lt;/span> &lt;span class="nv">M&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>PWD&lt;span class="k">)&lt;/span> modules
+&lt;span class="nf">clean&lt;/span>&lt;span class="o">:&lt;/span>
+make -C &lt;span class="k">$(&lt;/span>KDIR&lt;span class="k">)&lt;/span> &lt;span class="nv">M&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>PWD&lt;span class="k">)&lt;/span> clean
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>注意：&lt;code>Makefile&lt;/code> 的基本语法如下，如果缩进不是 &lt;code>&amp;lt;TAB&amp;gt;&lt;/code> 的话，会报错。&lt;/p>
+&lt;pre>&lt;code>&amp;lt;target&amp;gt;: [ &amp;lt;dependency &amp;gt; ]*
+[ &amp;lt;TAB&amp;gt; &amp;lt;command&amp;gt; &amp;lt;endl&amp;gt; ]+
+&lt;/code>&lt;/pre>&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="c1"># 查看当前文件&lt;/span>
+root@0xDayServer:~/dev/kernel/hello# ls -l
+total &lt;span class="m">8&lt;/span>
+-rw-r--r-- &lt;span class="m">1&lt;/span> root root &lt;span class="m">466&lt;/span> Mar &lt;span class="m">6&lt;/span> 22:53 hello.c
+-rw-r--r-- &lt;span class="m">1&lt;/span> root root &lt;span class="m">154&lt;/span> Mar &lt;span class="m">6&lt;/span> 22:54 Makefile
+&lt;span class="c1"># 编译&lt;/span>
+root@0xDayServer:~/dev/kernel/hello# make
+make -C /lib/modules/4.4.0-93-generic/build/ &lt;span class="nv">M&lt;/span>&lt;span class="o">=&lt;/span>/root/dev/kernel/hello modules
+make&lt;span class="o">[&lt;/span>1&lt;span class="o">]&lt;/span>: Entering directory &lt;span class="sb">`&lt;/span>/usr/src/linux-headers-4.4.0-93-generic&lt;span class="s1">&amp;#39;
+&lt;/span>&lt;span class="s1"> CC [M] /root/dev/kernel/hello/hello.o
+&lt;/span>&lt;span class="s1"> Building modules, stage 2.
+&lt;/span>&lt;span class="s1"> MODPOST 1 modules
+&lt;/span>&lt;span class="s1"> CC /root/dev/kernel/hello/hello.mod.o
+&lt;/span>&lt;span class="s1"> LD [M] /root/dev/kernel/hello/hello.ko
+&lt;/span>&lt;span class="s1">make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic&amp;#39;&lt;/span>
+&lt;span class="c1"># 编译后生成的模块文件&lt;/span>
+root@0xDayServer:~/dev/kernel/hello# ls
+hello.c hello.ko hello.mod.c hello.mod.o hello.o Makefile modules.order Module.symvers
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="测试模块">测试模块&lt;/h2>
+&lt;h3 id="查看模块信息">查看模块信息&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">root@0xDayServer:~/dev/kernel/hello# modinfo hello.ko
+filename: /root/dev/kernel/hello/hello.ko
+version: 0.1
+description: A simple Linux driver to say hello.
+author: WingLim
+license: GPL
+srcversion: 093C7851C912088AEE5F77C
+depends:
+vermagic: 4.4.0-93-generic SMP mod_unload modversions
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="加载模块">加载模块&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">root@0xDayServer:~/dev/kernel/hello# insmod hello.ko
+root@0xDayServer:~/dev/kernel/hello# lsmod
+Module Size Used by
+hello &lt;span class="m">16384&lt;/span> &lt;span class="m">0&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="卸载模块">卸载模块&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">root@0xDayServer:~/dev/kernel/hello# rmmod hello
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="查看-printk-输出信息">查看 printk() 输出信息&lt;/h3>
+&lt;ol>
+&lt;li>使用 &lt;code>dmesg&lt;/code> 命令&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">root@0xDayServer:~/dev/kernel/hello# dmesg
+&lt;span class="o">[&lt;/span>100339.744628&lt;span class="o">]&lt;/span> Hello LKM!
+&lt;span class="o">[&lt;/span>100432.211044&lt;span class="o">]&lt;/span> Goodbye LKM!
+&lt;/code>&lt;/pre>&lt;/div>&lt;ol start="2">
+&lt;li>查看内核日志&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
+Mar &lt;span class="m">6&lt;/span> 22:58:16 0xDayServer kernel: &lt;span class="o">[&lt;/span>100339.744628&lt;span class="o">]&lt;/span> Hello LKM!
+Mar &lt;span class="m">6&lt;/span> 22:59:49 0xDayServer kernel: &lt;span class="o">[&lt;/span>100432.211044&lt;span class="o">]&lt;/span> Goodbye LKM!
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="自定义参数">自定义参数&lt;/h2>
+&lt;p>将 &lt;code>hello.c&lt;/code> 修改如下&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c" data-lang="c">&lt;span class="cm">/*hello.c*/&lt;/span>
+&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/init.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/module.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;linux/kernel.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="n">MODULE_LICENSE&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;GPL&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_AUTHOR&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;WingLim&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_DESCRIPTION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;A simple Linux driver to say hello.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_VERSION&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;0.1&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">char&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="n">name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s">&amp;#34;LKM&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">module_param&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">charp&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">S_IRUGO&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">MODULE_PARM_DESC&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;The name to display in /var/log/kern.log&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">__init&lt;/span> &lt;span class="nf">helloModule_init&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">KERN_INFO&lt;/span> &lt;span class="s">&amp;#34;Hello %s!&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">name&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">void&lt;/span> &lt;span class="n">__exit&lt;/span> &lt;span class="nf">helloModule_exit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">void&lt;/span>&lt;span class="p">){&lt;/span>
+&lt;span class="n">printk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">KERN_INFO&lt;/span> &lt;span class="s">&amp;#34;Goodbye %s!&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">name&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">module_init&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">helloModule_init&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">module_exit&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">helloModule_exit&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="解析">解析&lt;/h3>
+&lt;h4 id="static-char-name--lkm">&lt;code>static char *name = &amp;quot;LKM&amp;quot;;&lt;/code>&lt;/h4>
+&lt;p>声明了一个全局静态字符指针变量 &lt;code>name&lt;/code>，默认值为&lt;code>&amp;quot;LKM&amp;quot;&lt;/code>&lt;/p>
+&lt;p>在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 &lt;code>static&lt;/code> 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。&lt;/p>
+&lt;h4 id="module_paramname-type-permissions">&lt;code>module_param(name, type, permissions)&lt;/code>&lt;/h4>
+&lt;p>定义在 &lt;a href="https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125">linux/moduleparam.h#L125&lt;/a>&lt;/p>
+&lt;p>&lt;code>name&lt;/code> 名字：向用户显示的参数名称和模块中的变量名称&lt;/p>
+&lt;p>&lt;code>type&lt;/code> 参数类型：byte, short, ushort, int, uint, long, ulong, charp, bool, invbool&lt;/p>
+&lt;p>&lt;code>permissions&lt;/code> 权限：值为 &lt;code>0&lt;/code> 时，禁用该项，&lt;code>0444&lt;/code> 所有人可读，&lt;code>0644&lt;/code> root用户可写，这里的写法和文件权限一致。&lt;/p>
+&lt;h4 id="module_parm_desc">MODULE_PARM_DESC&lt;/h4>
+&lt;p>参数描述，会显示在 &lt;code>modinfo&lt;/code> 中&lt;/p>
+&lt;h3 id="调用">调用&lt;/h3>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">root@0xDayServer:~/dev/kernel/hello# insmod hello.ko &lt;span class="nv">name&lt;/span>&lt;span class="o">=&lt;/span>World
+root@0xDayServer:~/dev/kernel/hello# dmesg
+&lt;span class="o">[&lt;/span>103386.179203&lt;span class="o">]&lt;/span> Hello World!
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="参考">参考&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/">Writing a Linux Kernel Module — Part 1: Introduction&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://abcdxyzk.github.io/blog/2018/01/08/kernel-fpu-1/">linux 下的浮点运算&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://book.douban.com/subject/1493443/">Linux Device Drivers : 3rd Edition&lt;/a>&lt;/li>
+&lt;/ul></description></item></channel></rss>
