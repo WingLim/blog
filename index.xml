@@ -20,7 +20,7 @@
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>新建并切换到 &lt;code>hugo&lt;/code> 分支&lt;/p>
 &lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">git checkout -b hugo
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>创建一个 hugo 博客&lt;/p>
-&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">hugo new site .
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">hugo new site
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>然后就可以在这个分支中撰写文章了&lt;/p>
 &lt;h3 id="使用-github-actions">使用 GitHub Actions&lt;/h3>
 &lt;p>创建 github workflows 文件夹&lt;/p>
@@ -81,24 +81,24 @@ go get -v github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 xcaddy build &lt;span class="se">\
 &lt;/span>&lt;span class="se">&lt;/span> --with github.com/WingLim/caddy-webhook
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;code>Caddyfile&lt;/code> 内容如下：&lt;/p>
-&lt;pre>&lt;code>example.com {
-tls yourmail@example.com
-encode zstd gzip
-log {
-output file /var/log/access.log
-}
-root blog
-file_server
-route /webhook {
-webhook {
-repo https://github.com/username/username.github.io.git
-branch main
-path blog
-secret yoursecret
-}
-}
-}
-&lt;/code>&lt;/pre></description></item><item><title>使用GiHub Actions构建多架构Docker镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-Caddyfile" data-lang="Caddyfile">&lt;span class="gh">example.com&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">tls&lt;/span> &lt;span class="s">yourmail@example.com&lt;/span>
+&lt;span class="k">encode&lt;/span> &lt;span class="s">zstd&lt;/span> &lt;span class="s">gzip&lt;/span>
+&lt;span class="k">log&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">output&lt;/span> &lt;span class="s">file&lt;/span> &lt;span class="s">/var/log/access.log&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">root&lt;/span> &lt;span class="s">blog&lt;/span>
+&lt;span class="k">file_server&lt;/span>
+&lt;span class="k">route&lt;/span> &lt;span class="nd">/webhook&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">webhook&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">repo&lt;/span> &lt;span class="s">https://github.com/username/username.github.io.git&lt;/span>
+&lt;span class="k">branch&lt;/span> &lt;span class="s">main&lt;/span>
+&lt;span class="k">path&lt;/span> &lt;span class="s">blog&lt;/span>
+&lt;span class="k">secret&lt;/span> &lt;span class="s">yoursecret&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>使用GiHub Actions构建多架构Docker镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>
 &lt;p>Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。&lt;/p>
 &lt;p>但仍存在一个问题，如果你直接使用 &lt;code>docker build&lt;/code> ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 &lt;code>Dockerfile&lt;/code> 拉到虚拟机中进行构建，但这会花费很多时间。&lt;/p>
 &lt;p>通过 GitHub Actions，我们可以在 &lt;code>push&lt;/code> 代码的时候，自动进行多架构的镜像构建，不再需要手动构建并推送到 Docker Hub 等镜像仓库中。&lt;/p>
