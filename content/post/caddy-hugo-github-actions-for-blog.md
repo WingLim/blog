@@ -54,13 +54,13 @@ cd username.github.io
 git checkout -b hugo
 ```
 
-创建一个 hugo 博客
+在当前目录创建一个 hugo 站点
 
 ```bash
-hugo new site 
+hugo new site .
 ```
 
-然后就可以在这个分支中撰写文章了
+然后就可以在 `hugo` 分支中撰写文章了
 
 
 
@@ -80,6 +80,12 @@ touch hugo.yml
 ```
 
 `hugo.yml` 内容如下：
+
+因为在 Hugo 站点中，大多数人都是使用 `submodule` 来配置主题，所以我们需要使用 `checkout@v2` 的 `submodules: 'recursive'` 来获取主题，否则在构建博客时会无法找到主题模版而无法生成静态页面。
+
+同时推荐使用 `extended` 版本的 Hugo，附带了 scss 的功能，以免使用的主题没有提供编译后的 css 文件。
+
+`secrets.GITHUB_TOKEN` 是 GitHub Actions 中自带的，无需再手动配置。
 
 ```yaml
 name: Deploy Hugo to Github Pages
@@ -182,3 +188,6 @@ example.com {
 }
 ```
 
+
+
+最后，我们就实现了文章开头所说的工作流程，剩下的就是写一些有价值的文章了。
