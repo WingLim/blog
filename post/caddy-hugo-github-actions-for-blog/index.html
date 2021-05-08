@@ -5,11 +5,11 @@ Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 <a href=/tags/github-actions/>GitHub Actions</a></div></div></div></div></header></article><div class=article-post><p>我的博客部署流程如下：</p><ol><li>写文章并推送到 <code>username.github.io</code> 仓库的 <code>hugo</code> 分支。</li><li>GitHub Actions 自动构建并推送到 <code>main</code> 分支。</li><li>GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。</li></ol><p>不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。</p><p>而使用 GitHub Actions 先构建推送到 <code>main</code>，然后再在服务器上拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后切换回来。</p><p>为了实现这个流程，在服务器上需要用到一个服务：Caddy</p><p>Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优点就是能自动申请 SSL 证书，自动更新证书。</p><p>当然，有人会说这类文章网上已经有很多了，为什么还要重复再写一篇。一个重要的原因是网上的的文章都是基于 Caddy V1 版本，而在 Caddy 更新到 V2 版本后，之前的插件都已经失效了。</p><p>本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置第 3 步的部署流程。</p><p>为了实现第 3 步，我给 Caddy 写了一个模块：<a href=https://github.com/WingLim/caddy-webhook>caddy-webhook</a>，下面通过具体的步骤来展示如何使用这个模块。</p><h3 id=建立仓库>建立仓库</h3><p>建立一个 <code>username.github.io</code> 的仓库会自动配置 GitHub Page，并且可以通过直接访问 <code>username.github.io</code> 来访问到 <code>main</code> 分支中的静态页面。</p><p>克隆仓库并进入</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>git clone username.github.io
 <span class=nb>cd</span> username.github.io
 </code></pre></div><p>新建并切换到 <code>hugo</code> 分支</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>git checkout -b hugo
-</code></pre></div><p>创建一个 hugo 博客</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>hugo new site 
-</code></pre></div><p>然后就可以在这个分支中撰写文章了</p><h3 id=使用-github-actions>使用 GitHub Actions</h3><p>创建 github workflows 文件夹</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>mkdir -p .github/workflows
+</code></pre></div><p>在当前目录创建一个 hugo 站点</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>hugo new site .
+</code></pre></div><p>然后就可以在 <code>hugo</code> 分支中撰写文章了</p><h3 id=使用-github-actions>使用 GitHub Actions</h3><p>创建 github workflows 文件夹</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>mkdir -p .github/workflows
 </code></pre></div><p>进入 workflows 文件夹并新建 <code>hugo</code> 工作流</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=nb>cd</span> .github/workflows
 touch hugo.yml
-</code></pre></div><p><code>hugo.yml</code> 内容如下：</p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Deploy Hugo to Github Pages</span><span class=w>
+</code></pre></div><p><code>hugo.yml</code> 内容如下：</p><p>因为在 Hugo 站点中，大多数人都是使用 <code>submodule</code> 来配置主题，所以我们需要使用 <code>checkout@v2</code> 的 <code>submodules: 'recursive'</code> 来获取主题，否则在构建博客时会无法找到主题模版而无法生成静态页面。</p><p>同时推荐使用 <code>extended</code> 版本的 Hugo，附带了 scss 的功能，以免使用的主题没有提供编译后的 css 文件。</p><p><code>secrets.GITHUB_TOKEN</code> 是 GitHub Actions 中自带的，无需再手动配置。</p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Deploy Hugo to Github Pages</span><span class=w>
 </span><span class=w>
 </span><span class=w></span><span class=nt>on</span><span class=p>:</span><span class=w>
 </span><span class=w>  </span><span class=nt>push</span><span class=p>:</span><span class=w>
@@ -76,5 +76,5 @@ xcaddy build <span class=se>\
     <span class=p>}</span>
   <span class=p>}</span>
 <span class=p>}</span>
-</code></pre></div></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/build-docker-image-in-multi-archs-with-github-actions/ title="Previous post (older)"><span>Previous</span>
+</code></pre></div><p>最后，我们就实现了文章开头所说的工作流程，剩下的就是写一些有价值的文章了。</p></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/build-docker-image-in-multi-archs-with-github-actions/ title="Previous post (older)"><span>Previous</span>
 使用GiHub Actions构建多架构Docker镜像</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.c5d8f3350f5a652f526b982306299353824299adb7a3bd261ecffacc47087f66.js></script></footer></body></html>
