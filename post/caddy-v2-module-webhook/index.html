@@ -1,0 +1,34 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Caddy V2 Webhook 模块 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.4e90cee935c47394b47f9cb7ffe8e3ffab18b88d82fea203918cc3f92eec5eb2.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
+<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Caddy V2 Webhook 模块</h1><div class=post-meta><div>By on <time>May 08, 2021</time></div><div class=tags><a href=/tags/caddy/>Caddy</a>
+<a href=/tags/module/>Module</a>
+<a href=/tags/webhook/>Webhook</a></div></div></div></div></header></article><div class=article-post><h2 id=介绍>介绍</h2><p>项目地址：<a href=https://github.com/WingLim/caddy-webhook>caddy-webhook</a></p><p><code>caddy-webhook</code> 的流程分三步：</p><ol><li>初始化时拉取仓库到指定的本地路径，如果本地路径上已经存在仓库，则用 <code>fetch</code> 更新并切换到设定的分支。</li><li>在仓库内执行用户设定的命令。</li><li>在用户设定的网址路径上监听 webhook 请求，收到正确的请求后更新仓库并重复第2步。</li></ol><h2 id=使用方法>使用方法</h2><p>现在支持的 webhook 类型：</p><ul><li>github</li><li>gitlanb</li><li>gitee</li><li>bitbucket</li><li>gogs</li></ul><h3 id=caddyfile-格式>Caddyfile 格式</h3><p>需要注意的是，webhook 这个 handler 需要放在 <code>route</code>，因为为了正确响应 webhook request，caddy-webhook 不会执行下一个 handler。</p><pre><code>webhook [&lt;repo&gt; &lt;path&gt;] {
+    repo       &lt;text&gt;
+    path       &lt;text&gt;
+    branch     &lt;text&gt;
+    depth      &lt;int&gt;
+    type       &lt;text&gt;
+    secret     &lt;text&gt;
+    command    &lt;text&gt;...
+    key	       &lt;text&gt;
+    username   &lt;text&gt;
+    password   &lt;text&gt;
+    token      &lt;text&gt;
+    submodule
+}
+</code></pre><ul><li>repo - git 仓库的远程地址，支持 http、https、ssh</li><li>path - git 仓库的本地路径</li><li>branch - 分支名</li><li>depth - 拉取时的深度。默认值为 <code>0</code></li><li>type - webhook 的类型。默认值为 <code>github</code></li><li>secret - 用户在 GitHub 等网站上设置的请求的密码，用于校验请求</li><li>submodule - 是否加载子模块</li><li>command - 要执行的命令</li><li>key - 使用 ssh 方法获取 git 仓库时需要的 key 文件路径</li><li>username - http 认证的用户名</li><li>password - http 认证的密码</li><li>token - GitHub 授权 Token</li></ul><h2 id=使用样例>使用样例</h2><p><code>Caddyfile</code></p><pre><code>example.com
+
+root www
+file_server
+
+route /webhook {
+    webhook {
+        repo https://github.com/WingLim/winglim.github.io.git
+        path blog
+        branch hugo
+        command hugo --destination ../www
+        submodule   
+    }
+}
+</code></pre></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/build-docker-image-in-multi-archs-with-github-actions/ title="Previous post (older)"><span>Previous</span>
+使用GiHub Actions构建多架构Docker镜像</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.a94f58a30ad2560de728e080d87f75c60cf806fd1b3d5f4815f1a1a02c0d1859.js></script></footer></body></html>

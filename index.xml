@@ -1,4 +1,66 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Lim's Blog</title><link>/</link><description>Recent content on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Fri, 27 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>使用GiHub Actions构建多架构Docker镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Lim's Blog</title><link>/</link><description>Recent content on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Fri, 27 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>Caddy V2 Webhook 模块</title><link>/post/caddy-v2-module-webhook/</link><pubDate>Sat, 08 May 2021 13:07:28 +0800</pubDate><guid>/post/caddy-v2-module-webhook/</guid><description>
+&lt;h2 id="介绍">介绍&lt;/h2>
+&lt;p>项目地址：&lt;a href="https://github.com/WingLim/caddy-webhook">caddy-webhook&lt;/a>&lt;/p>
+&lt;p>&lt;code>caddy-webhook&lt;/code> 的流程分三步：&lt;/p>
+&lt;ol>
+&lt;li>初始化时拉取仓库到指定的本地路径，如果本地路径上已经存在仓库，则用 &lt;code>fetch&lt;/code> 更新并切换到设定的分支。&lt;/li>
+&lt;li>在仓库内执行用户设定的命令。&lt;/li>
+&lt;li>在用户设定的网址路径上监听 webhook 请求，收到正确的请求后更新仓库并重复第2步。&lt;/li>
+&lt;/ol>
+&lt;h2 id="使用方法">使用方法&lt;/h2>
+&lt;p>现在支持的 webhook 类型：&lt;/p>
+&lt;ul>
+&lt;li>github&lt;/li>
+&lt;li>gitlanb&lt;/li>
+&lt;li>gitee&lt;/li>
+&lt;li>bitbucket&lt;/li>
+&lt;li>gogs&lt;/li>
+&lt;/ul>
+&lt;h3 id="caddyfile-格式">Caddyfile 格式&lt;/h3>
+&lt;p>需要注意的是，webhook 这个 handler 需要放在 &lt;code>route&lt;/code>，因为为了正确响应 webhook request，caddy-webhook 不会执行下一个 handler。&lt;/p>
+&lt;pre>&lt;code>webhook [&amp;lt;repo&amp;gt; &amp;lt;path&amp;gt;] {
+repo &amp;lt;text&amp;gt;
+path &amp;lt;text&amp;gt;
+branch &amp;lt;text&amp;gt;
+depth &amp;lt;int&amp;gt;
+type &amp;lt;text&amp;gt;
+secret &amp;lt;text&amp;gt;
+command &amp;lt;text&amp;gt;...
+key &amp;lt;text&amp;gt;
+username &amp;lt;text&amp;gt;
+password &amp;lt;text&amp;gt;
+token &amp;lt;text&amp;gt;
+submodule
+}
+&lt;/code>&lt;/pre>&lt;ul>
+&lt;li>repo - git 仓库的远程地址，支持 http、https、ssh&lt;/li>
+&lt;li>path - git 仓库的本地路径&lt;/li>
+&lt;li>branch - 分支名&lt;/li>
+&lt;li>depth - 拉取时的深度。默认值为 &lt;code>0&lt;/code>&lt;/li>
+&lt;li>type - webhook 的类型。默认值为 &lt;code>github&lt;/code>&lt;/li>
+&lt;li>secret - 用户在 GitHub 等网站上设置的请求的密码，用于校验请求&lt;/li>
+&lt;li>submodule - 是否加载子模块&lt;/li>
+&lt;li>command - 要执行的命令&lt;/li>
+&lt;li>key - 使用 ssh 方法获取 git 仓库时需要的 key 文件路径&lt;/li>
+&lt;li>username - http 认证的用户名&lt;/li>
+&lt;li>password - http 认证的密码&lt;/li>
+&lt;li>token - GitHub 授权 Token&lt;/li>
+&lt;/ul>
+&lt;h2 id="使用样例">使用样例&lt;/h2>
+&lt;p>&lt;code>Caddyfile&lt;/code>&lt;/p>
+&lt;pre>&lt;code>example.com
+root www
+file_server
+route /webhook {
+webhook {
+repo https://github.com/WingLim/winglim.github.io.git
+path blog
+branch hugo
+command hugo --destination ../www
+submodule
+}
+}
+&lt;/code>&lt;/pre></description></item><item><title>使用GiHub Actions构建多架构Docker镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>
 &lt;p>Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。&lt;/p>
 &lt;p>但仍存在一个问题，如果你直接使用 &lt;code>docker build&lt;/code> ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 &lt;code>Dockerfile&lt;/code> 拉到虚拟机中进行构建，但这会花费很多时间。&lt;/p>
 &lt;p>通过 GitHub Actions，我们可以在 &lt;code>push&lt;/code> 代码的时候，自动进行多架构的镜像构建，不再需要手动构建并推送到 Docker Hub 等镜像仓库中。&lt;/p>
