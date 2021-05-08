@@ -17,7 +17,8 @@
 &lt;li>gogs&lt;/li>
 &lt;/ul>
 &lt;h3 id="caddyfile-格式">Caddyfile 格式&lt;/h3>
-&lt;p>需要注意的是，webhook 这个 handler 需要放在 &lt;code>route&lt;/code>，因为为了正确响应 webhook request，caddy-webhook 不会执行下一个 handler。&lt;/p>
+&lt;p>需要注意的是，如果你在一个 &lt;code>route&lt;/code> 中有多个 handle，webhook 这个 handler 需要放在最后，因为为了正确响应 webhook request，&lt;code>caddy-webhook&lt;/code> 不会执行下一个 handler。&lt;/p>
+&lt;p>这里建议单独给 webhook 设置一个路径。&lt;/p>
 &lt;pre>&lt;code>webhook [&amp;lt;repo&amp;gt; &amp;lt;path&amp;gt;] {
 repo &amp;lt;text&amp;gt;
 path &amp;lt;text&amp;gt;
