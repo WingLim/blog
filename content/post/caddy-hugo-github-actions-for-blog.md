@@ -14,14 +14,14 @@ categories:
 我的博客部署流程如下：
 
 1. 写文章并推送到 `username.github.io` 仓库的 `hugo` 分支。
-2. GitHub Actions 自动构建并推送到 `main` 分支
+2. GitHub Actions 自动构建并推送到 `main` 分支。
 3. GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。
 
 
 
 不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。
 
-而使用 GitHub Actions 先构建后拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后会切换回来。
+而使用 GitHub Actions 先构建推送到 `main`，然后再在服务器上拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后切换回来。
 
 
 
@@ -31,7 +31,7 @@ Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优�
 
 当然，有人会说这类文章网上已经有很多了，为什么还要重复再写一篇。一个重要的原因是网上的的文章都是基于 Caddy V1 版本，而在 Caddy 更新到 V2 版本后，之前的插件都已经失效了。
 
-本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置部署流程。
+本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置第 3 步的部署流程。
 
 为了实现第 3 步，我给 Caddy 写了一个模块：[caddy-webhook](https://github.com/WingLim/caddy-webhook)，下面通过具体的步骤来展示如何使用这个模块。
 
@@ -56,7 +56,7 @@ git checkout -b hugo
 
 创建一个 hugo 博客
 
-```
+```bash
 hugo new site .
 ```
 
