@@ -1,0 +1,80 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Caddy2+Hugo+Github Actions 的自动化部署博客方案 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.b81b77bfef641cdef5a77f4a7bb221547def6cea9b73ab29b5fed4c98707f2a8.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
+<button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Caddy2+Hugo+Github Actions 的自动化部署博客方案</h1><div class=post-meta><div>By on <time>May 08, 2021</time></div><div class=tags><a href=/tags/caddy/>Caddy</a>
+<a href=/tags/hugo/>Hugo</a>
+<a href=/tags/github-actions/>GitHub Actions</a></div></div></div></div></header></article><div class=article-post><p>我的博客部署流程如下：</p><ol><li>写文章并推送到 <code>username.github.io</code> 仓库的 <code>hugo</code> 分支。</li><li>GitHub Actions 自动构建并推送到 <code>main</code> 分支</li><li>GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。</li></ol><p>不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。</p><p>而使用 GitHub Actions 先构建后拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后会切换回来。</p><p>为了实现这个流程，在服务器上需要用到一个服务：Caddy</p><p>Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优点就是能自动申请 SSL 证书，自动更新证书。</p><p>当然，有人会说这类文章网上已经有很多了，为什么还要重复再写一篇。一个重要的原因是网上的的文章都是基于 Caddy V1 版本，而在 Caddy 更新到 V2 版本后，之前的插件都已经失效了。</p><p>本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置部署流程。</p><p>为了实现第 3 步，我给 Caddy 写了一个模块：<a href=https://github.com/WingLim/caddy-webhook>caddy-webhook</a>，下面通过具体的步骤来展示如何使用这个模块。</p><h3 id=建立仓库>建立仓库</h3><p>建立一个 <code>username.github.io</code> 的仓库会自动配置 GitHub Page，并且可以通过直接访问 <code>username.github.io</code> 来访问到 <code>main</code> 分支中的静态页面。</p><p>克隆仓库并进入</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>git clone username.github.io
+<span class=nb>cd</span> username.github.io
+</code></pre></div><p>新建并切换到 <code>hugo</code> 分支</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>git checkout -b hugo
+</code></pre></div><p>创建一个 hugo 博客</p><pre><code>hugo new site .
+</code></pre><p>然后就可以在这个分支中撰写文章了</p><h3 id=使用-github-actions>使用 GitHub Actions</h3><p>创建 github workflows 文件夹</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>mkdir -p .github/workflows
+</code></pre></div><p>进入 workflows 文件夹并新建 <code>hugo</code> 工作流</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=nb>cd</span> .github/workflows
+touch hugo.yml
+</code></pre></div><p><code>hugo.yml</code> 内容如下：</p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Deploy Hugo to Github Pages</span><span class=w>
+</span><span class=w>
+</span><span class=w></span><span class=nt>on</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>push</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>branches</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span>- <span class=l>hugo</span><span class=w>
+</span><span class=w>
+</span><span class=w></span><span class=nt>jobs</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>build-deploy</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>runs-on</span><span class=p>:</span><span class=w> </span><span class=l>ubuntu-latest</span><span class=w>
+</span><span class=w>    </span><span class=nt>steps</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span>- <span class=nt>uses</span><span class=p>:</span><span class=w> </span><span class=l>actions/checkout@v2</span><span class=w>
+</span><span class=w>        </span><span class=nt>with</span><span class=p>:</span><span class=w>
+</span><span class=w>           </span><span class=nt>submodules</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;recursive&#39;</span><span class=w>
+</span><span class=w>
+</span><span class=w>      </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Setup Hugo</span><span class=w>
+</span><span class=w>        </span><span class=nt>uses</span><span class=p>:</span><span class=w> </span><span class=l>peaceiris/actions-hugo@v2</span><span class=w>
+</span><span class=w>        </span><span class=nt>with</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=nt>hugo-version</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;0.83.1&#39;</span><span class=w>
+</span><span class=w>          </span><span class=nt>extended</span><span class=p>:</span><span class=w> </span><span class=kc>true</span><span class=w>
+</span><span class=w>
+</span><span class=w>      </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Build</span><span class=w>
+</span><span class=w>        </span><span class=nt>run</span><span class=p>:</span><span class=w> </span><span class=l>hugo --minify</span><span class=w>
+</span><span class=w>
+</span><span class=w>      </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Deploy</span><span class=w>
+</span><span class=w>        </span><span class=nt>uses</span><span class=p>:</span><span class=w> </span><span class=l>peaceiris/actions-gh-pages@v3</span><span class=w>
+</span><span class=w>        </span><span class=nt>with</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=nt>github_token</span><span class=p>:</span><span class=w> </span><span class=l>${{ secrets.GITHUB_TOKEN }}</span><span class=w>
+</span><span class=w>          </span><span class=nt>publish_dir</span><span class=p>:</span><span class=w> </span><span class=l>./public</span><span class=w>
+</span><span class=w>          </span><span class=nt>publish_branch</span><span class=p>:</span><span class=w> </span><span class=l>main</span><span class=w>
+</span></code></pre></div><h3 id=部署-caddy>部署 Caddy</h3><p>创建文件夹用于保存 Caddy 的文件数据</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>mkdir -p caddy/data
+</code></pre></div><p>初始化日志及配置文件</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=nb>cd</span> caddy
+touch access.log
+touch Caddyfile
+</code></pre></div><p>使用 docker 进行部署，<code>winglim/caddy</code> 是我构建的包含了 <code>caddy-webhook</code> 模块的镜像。</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>docker run -itd <span class=se>\
+</span><span class=se></span>    -p 80:80 -p 443:443
+    -v <span class=nv>$PWD</span>/Caddyfile:/etc/caddy/Caddyfile <span class=se>\
+</span><span class=se></span>    -v <span class=nv>$PWD</span>/access.log:/var/log/access.log <span class=se>\
+</span><span class=se></span>    -v <span class=nv>$PWD</span>/data:/data<span class=se>\
+</span><span class=se></span>    winglim/caddy
+</code></pre></div><p>如果不想使用 docker 进行部署的话，可以自己手动编译一个带 <code>caddy-webhook</code> 模块的 caddy</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 注意 go install package@tag 只在 go 1.16 及以上版本才支持</span>
+go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+<span class=c1># 低于 go 1.16 版本请使用 go get</span>
+go get -v github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
+xcaddy build <span class=se>\
+</span><span class=se></span>	--with github.com/WingLim/caddy-webhook
+</code></pre></div><p><code>Caddyfile</code> 内容如下：</p><pre><code>example.com {
+  tls yourmail@example.com
+  encode zstd gzip
+
+  log {
+    output file /var/log/access.log
+  }
+
+  root blog
+  file_server
+  
+  route /webhook {
+    webhook {
+      repo https://github.com/username/username.github.io.git
+      branch main
+      path blog
+      secret yoursecret
+    }
+  }
+}
+</code></pre></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/build-docker-image-in-multi-archs-with-github-actions/ title="Previous post (older)"><span>Previous</span>
+使用GiHub Actions构建多架构Docker镜像</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.c5d8f3350f5a652f526b982306299353824299adb7a3bd261ecffacc47087f66.js></script></footer></body></html>

@@ -1,64 +1,101 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Lim's Blog</title><link>/</link><description>Recent content on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sat, 08 May 2021 13:07:28 +0800</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>Caddy V2 Webhook 模块</title><link>/post/caddy-v2-module-webhook/</link><pubDate>Sat, 08 May 2021 13:07:28 +0800</pubDate><guid>/post/caddy-v2-module-webhook/</guid><description>
-&lt;h2 id="介绍">介绍&lt;/h2>
-&lt;p>项目地址：&lt;a href="https://github.com/WingLim/caddy-webhook">caddy-webhook&lt;/a>&lt;/p>
-&lt;p>&lt;code>caddy-webhook&lt;/code> 的流程分三步：&lt;/p>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Lim's Blog</title><link>/</link><description>Recent content on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sat, 08 May 2021 18:35:53 +0800</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>Caddy2+Hugo+Github Actions 的自动化部署博客方案</title><link>/post/caddy-hugo-github-actions-for-blog/</link><pubDate>Sat, 08 May 2021 18:35:53 +0800</pubDate><guid>/post/caddy-hugo-github-actions-for-blog/</guid><description>
+&lt;p>我的博客部署流程如下：&lt;/p>
 &lt;ol>
-&lt;li>初始化时拉取仓库到指定的本地路径，如果本地路径上已经存在仓库，则用 &lt;code>fetch&lt;/code> 更新并切换到设定的分支。&lt;/li>
-&lt;li>在仓库内执行用户设定的命令。&lt;/li>
-&lt;li>在用户设定的网址路径上监听 webhook 请求，收到正确的请求后更新仓库并重复第2步。&lt;/li>
+&lt;li>写文章并推送到 &lt;code>username.github.io&lt;/code> 仓库的 &lt;code>hugo&lt;/code> 分支。&lt;/li>
+&lt;li>GitHub Actions 自动构建并推送到 &lt;code>main&lt;/code> 分支&lt;/li>
+&lt;li>GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。&lt;/li>
 &lt;/ol>
-&lt;h2 id="使用方法">使用方法&lt;/h2>
-&lt;p>现在支持的 webhook 类型：&lt;/p>
-&lt;ul>
-&lt;li>github&lt;/li>
-&lt;li>gitlanb&lt;/li>
-&lt;li>gitee&lt;/li>
-&lt;li>bitbucket&lt;/li>
-&lt;li>gogs&lt;/li>
-&lt;/ul>
-&lt;h3 id="caddyfile-格式">Caddyfile 格式&lt;/h3>
-&lt;p>需要注意的是，如果你在一个 &lt;code>route&lt;/code> 中有多个 handle，webhook 这个 handler 需要放在最后，因为为了正确响应 webhook request，&lt;code>caddy-webhook&lt;/code> 不会执行下一个 handler。&lt;/p>
-&lt;p>这里建议单独给 webhook 设置一个路径。&lt;/p>
-&lt;pre>&lt;code>webhook [&amp;lt;repo&amp;gt; &amp;lt;path&amp;gt;] {
-repo &amp;lt;text&amp;gt;
-path &amp;lt;text&amp;gt;
-branch &amp;lt;text&amp;gt;
-depth &amp;lt;int&amp;gt;
-type &amp;lt;text&amp;gt;
-secret &amp;lt;text&amp;gt;
-command &amp;lt;text&amp;gt;...
-key &amp;lt;text&amp;gt;
-username &amp;lt;text&amp;gt;
-password &amp;lt;text&amp;gt;
-token &amp;lt;text&amp;gt;
-submodule
+&lt;p>不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。&lt;/p>
+&lt;p>而使用 GitHub Actions 先构建后拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后会切换回来。&lt;/p>
+&lt;p>为了实现这个流程，在服务器上需要用到一个服务：Caddy&lt;/p>
+&lt;p>Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优点就是能自动申请 SSL 证书，自动更新证书。&lt;/p>
+&lt;p>当然，有人会说这类文章网上已经有很多了，为什么还要重复再写一篇。一个重要的原因是网上的的文章都是基于 Caddy V1 版本，而在 Caddy 更新到 V2 版本后，之前的插件都已经失效了。&lt;/p>
+&lt;p>本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置部署流程。&lt;/p>
+&lt;p>为了实现第 3 步，我给 Caddy 写了一个模块：&lt;a href="https://github.com/WingLim/caddy-webhook">caddy-webhook&lt;/a>，下面通过具体的步骤来展示如何使用这个模块。&lt;/p>
+&lt;h3 id="建立仓库">建立仓库&lt;/h3>
+&lt;p>建立一个 &lt;code>username.github.io&lt;/code> 的仓库会自动配置 GitHub Page，并且可以通过直接访问 &lt;code>username.github.io&lt;/code> 来访问到 &lt;code>main&lt;/code> 分支中的静态页面。&lt;/p>
+&lt;p>克隆仓库并进入&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">git clone username.github.io
+&lt;span class="nb">cd&lt;/span> username.github.io
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>新建并切换到 &lt;code>hugo&lt;/code> 分支&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">git checkout -b hugo
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>创建一个 hugo 博客&lt;/p>
+&lt;pre>&lt;code>hugo new site .
+&lt;/code>&lt;/pre>&lt;p>然后就可以在这个分支中撰写文章了&lt;/p>
+&lt;h3 id="使用-github-actions">使用 GitHub Actions&lt;/h3>
+&lt;p>创建 github workflows 文件夹&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">mkdir -p .github/workflows
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>进入 workflows 文件夹并新建 &lt;code>hugo&lt;/code> 工作流&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="nb">cd&lt;/span> .github/workflows
+touch hugo.yml
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;code>hugo.yml&lt;/code> 内容如下：&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Deploy Hugo to Github Pages&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">&lt;/span>&lt;span class="nt">on&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">push&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">branches&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>- &lt;span class="l">hugo&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">&lt;/span>&lt;span class="nt">jobs&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">build-deploy&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">runs-on&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ubuntu-latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">steps&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>- &lt;span class="nt">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">actions/checkout@v2&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">with&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">submodules&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s1">&amp;#39;recursive&amp;#39;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Setup Hugo&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">peaceiris/actions-hugo@v2&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">with&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">hugo-version&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s1">&amp;#39;0.83.1&amp;#39;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">extended&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Build&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">run&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">hugo --minify&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Deploy&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">uses&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">peaceiris/actions-gh-pages@v3&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">with&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">github_token&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">${{ secrets.GITHUB_TOKEN }}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">publish_dir&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">./public&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">publish_branch&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">main&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="部署-caddy">部署 Caddy&lt;/h3>
+&lt;p>创建文件夹用于保存 Caddy 的文件数据&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">mkdir -p caddy/data
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>初始化日志及配置文件&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="nb">cd&lt;/span> caddy
+touch access.log
+touch Caddyfile
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>使用 docker 进行部署，&lt;code>winglim/caddy&lt;/code> 是我构建的包含了 &lt;code>caddy-webhook&lt;/code> 模块的镜像。&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">docker run -itd &lt;span class="se">\
+&lt;/span>&lt;span class="se">&lt;/span> -p 80:80 -p 443:443
+-v &lt;span class="nv">$PWD&lt;/span>/Caddyfile:/etc/caddy/Caddyfile &lt;span class="se">\
+&lt;/span>&lt;span class="se">&lt;/span> -v &lt;span class="nv">$PWD&lt;/span>/access.log:/var/log/access.log &lt;span class="se">\
+&lt;/span>&lt;span class="se">&lt;/span> -v &lt;span class="nv">$PWD&lt;/span>/data:/data&lt;span class="se">\
+&lt;/span>&lt;span class="se">&lt;/span> winglim/caddy
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果不想使用 docker 进行部署的话，可以自己手动编译一个带 &lt;code>caddy-webhook&lt;/code> 模块的 caddy&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="c1"># 注意 go install package@tag 只在 go 1.16 及以上版本才支持&lt;/span>
+go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+&lt;span class="c1"># 低于 go 1.16 版本请使用 go get&lt;/span>
+go get -v github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+xcaddy build &lt;span class="se">\
+&lt;/span>&lt;span class="se">&lt;/span> --with github.com/WingLim/caddy-webhook
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;code>Caddyfile&lt;/code> 内容如下：&lt;/p>
+&lt;pre>&lt;code>example.com {
+tls yourmail@example.com
+encode zstd gzip
+log {
+output file /var/log/access.log
 }
-&lt;/code>&lt;/pre>&lt;ul>
-&lt;li>repo - git 仓库的远程地址，支持 http、https、ssh&lt;/li>
-&lt;li>path - git 仓库的本地路径&lt;/li>
-&lt;li>branch - 分支名&lt;/li>
-&lt;li>depth - 拉取时的深度。默认值为 &lt;code>0&lt;/code>&lt;/li>
-&lt;li>type - webhook 的类型。默认值为 &lt;code>github&lt;/code>&lt;/li>
-&lt;li>secret - 用户在 GitHub 等网站上设置的请求的密码，用于校验请求&lt;/li>
-&lt;li>submodule - 是否加载子模块&lt;/li>
-&lt;li>command - 要执行的命令&lt;/li>
-&lt;li>key - 使用 ssh 方法获取 git 仓库时需要的 key 文件路径&lt;/li>
-&lt;li>username - http 认证的用户名&lt;/li>
-&lt;li>password - http 认证的密码&lt;/li>
-&lt;li>token - GitHub 授权 Token&lt;/li>
-&lt;/ul>
-&lt;h2 id="使用样例">使用样例&lt;/h2>
-&lt;p>&lt;code>Caddyfile&lt;/code>&lt;/p>
-&lt;pre>&lt;code>example.com
-root www
+root blog
 file_server
 route /webhook {
 webhook {
-repo https://github.com/WingLim/winglim.github.io.git
+repo https://github.com/username/username.github.io.git
+branch main
 path blog
-branch hugo
-command hugo --destination ../www
-submodule
+secret yoursecret
+}
 }
 }
 &lt;/code>&lt;/pre></description></item><item><title>使用GiHub Actions构建多架构Docker镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>
