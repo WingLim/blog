@@ -1,9 +1,9 @@
-<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>C语言项目单元测试实践 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.4e90cee935c47394b47f9cb7ffe8e3ffab18b88d82fea203918cc3f92eec5eb2.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>C语言项目单元测试实践 | Lim's Blog</title><link rel=stylesheet href=/sass/main.min.b81b77bfef641cdef5a77f4a7bb221547def6cea9b73ab29b5fed4c98707f2a8.css></head><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><span class=emoji>😎</span>
 Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
 <button id=dark-mode-button></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>C语言项目单元测试实践</h1><div class=post-meta><div>By WingLim on <time>December 22, 2020</time></div><div class=tags><a href=/tags/c/>C</a>
-<a href=/tags/cmake/>CMake</a>
 <a href=/tags/cmocka/>CMocka</a>
-<a href=/tags/codecov/>CodeCov</a></div></div></div></div></header></article><div class=article-post><h2 id=前言>前言</h2><p>最近一段时间在写C语言的课程设计，之前在用 Golang 的时候，Golang 自带单元测试，用起来非常舒服，而C语言不使用框架写测试则会很麻烦，下面通过一个简单的项目来实践在C语言中进行单元测试。</p><p>项目中使用 <a href=https://cmocka.org>CMocka</a> 作为单元测试框架，使用 <a href=https://about.codecov.io>CodeCov</a> 检查代码覆盖率。</p><p>完整项目代码可以在 GitHub 上查看：<a href=https://github.com/WingLim/c-unittest-example>c-unittest-example</a></p><h2 id=项目目录>项目目录</h2><pre><code>.
+<a href=/tags/codecov/>CodeCov</a>
+<a href=/tags/cmake/>CMake</a></div></div></div></div></header></article><div class=article-post><h2 id=前言>前言</h2><p>最近一段时间在写C语言的课程设计，之前在用 Golang 的时候，Golang 自带单元测试，用起来非常舒服，而C语言不使用框架写测试则会很麻烦，下面通过一个简单的项目来实践在C语言中进行单元测试。</p><p>项目中使用 <a href=https://cmocka.org>CMocka</a> 作为单元测试框架，使用 <a href=https://about.codecov.io>CodeCov</a> 检查代码覆盖率。</p><p>完整项目代码可以在 GitHub 上查看：<a href=https://github.com/WingLim/c-unittest-example>c-unittest-example</a></p><h2 id=项目目录>项目目录</h2><pre><code>.
 ├── CMakeLists.txt
 ├── Makefile
 ├── README.md
@@ -240,4 +240,4 @@ bash &lt;<span class=o>(</span>curl -s https://codecov.io/bash<span class=o>)</s
 </code></pre></div><p>项目也可以使用 GitHub Actions 进行自动化构建和上传</p><p>在项目中设置 <code>secrets.CODECOV_TOKEN</code> 即可，详细设置可以查看 <code>.github/workflows/workflow.yml</code></p></div></div><div class=container><nav class="flex container suggested"><a rel=prev href=/post/linux-kernel-practice-hijack-syscall/ title="Previous post (older)"><span>Previous</span>
 Linux Kernel 实践(二)：劫持系统调用</a>
 <a rel=next href=/post/dell-optiplex-5070mff-hackintosh/ title="Next post (newer)"><span>Next</span>
-戴尔5070MFF黑苹果体验</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.a94f58a30ad2560de728e080d87f75c60cf806fd1b3d5f4815f1a1a02c0d1859.js></script></footer></body></html>
+戴尔5070MFF黑苹果体验</a></nav></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav></section><script async src=/js/features.min.c5d8f3350f5a652f526b982306299353824299adb7a3bd261ecffacc47087f66.js></script></footer></body></html>
