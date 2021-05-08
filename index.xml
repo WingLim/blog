@@ -2,15 +2,15 @@
 &lt;p>我的博客部署流程如下：&lt;/p>
 &lt;ol>
 &lt;li>写文章并推送到 &lt;code>username.github.io&lt;/code> 仓库的 &lt;code>hugo&lt;/code> 分支。&lt;/li>
-&lt;li>GitHub Actions 自动构建并推送到 &lt;code>main&lt;/code> 分支&lt;/li>
+&lt;li>GitHub Actions 自动构建并推送到 &lt;code>main&lt;/code> 分支。&lt;/li>
 &lt;li>GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。&lt;/li>
 &lt;/ol>
 &lt;p>不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。&lt;/p>
-&lt;p>而使用 GitHub Actions 先构建后拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后会切换回来。&lt;/p>
+&lt;p>而使用 GitHub Actions 先构建推送到 &lt;code>main&lt;/code>，然后再在服务器上拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后切换回来。&lt;/p>
 &lt;p>为了实现这个流程，在服务器上需要用到一个服务：Caddy&lt;/p>
 &lt;p>Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优点就是能自动申请 SSL 证书，自动更新证书。&lt;/p>
 &lt;p>当然，有人会说这类文章网上已经有很多了，为什么还要重复再写一篇。一个重要的原因是网上的的文章都是基于 Caddy V1 版本，而在 Caddy 更新到 V2 版本后，之前的插件都已经失效了。&lt;/p>
-&lt;p>本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置部署流程。&lt;/p>
+&lt;p>本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置第 3 步的部署流程。&lt;/p>
 &lt;p>为了实现第 3 步，我给 Caddy 写了一个模块：&lt;a href="https://github.com/WingLim/caddy-webhook">caddy-webhook&lt;/a>，下面通过具体的步骤来展示如何使用这个模块。&lt;/p>
 &lt;h3 id="建立仓库">建立仓库&lt;/h3>
 &lt;p>建立一个 &lt;code>username.github.io&lt;/code> 的仓库会自动配置 GitHub Page，并且可以通过直接访问 &lt;code>username.github.io&lt;/code> 来访问到 &lt;code>main&lt;/code> 分支中的静态页面。&lt;/p>
@@ -20,8 +20,8 @@
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>新建并切换到 &lt;code>hugo&lt;/code> 分支&lt;/p>
 &lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">git checkout -b hugo
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>创建一个 hugo 博客&lt;/p>
-&lt;pre>&lt;code>hugo new site .
-&lt;/code>&lt;/pre>&lt;p>然后就可以在这个分支中撰写文章了&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">hugo new site .
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>然后就可以在这个分支中撰写文章了&lt;/p>
 &lt;h3 id="使用-github-actions">使用 GitHub Actions&lt;/h3>
 &lt;p>创建 github workflows 文件夹&lt;/p>
 &lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">mkdir -p .github/workflows
