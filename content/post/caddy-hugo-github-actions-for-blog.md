@@ -1,5 +1,5 @@
 ---
-title: "Caddy2+Hugo+Github Actions 的自动化部署博客方案"
+title: "Caddy2 + Hugo + Github Actions 的自动化部署博客方案"
 date: 2021-05-08T18:35:53+08:00
 slug: caddy-hugo-github-actions-for-blog
 tags:
