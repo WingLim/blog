@@ -57,7 +57,7 @@ git checkout -b hugo
 创建一个 hugo 博客
 
 ```bash
-hugo new site .
+hugo new site 
 ```
 
 然后就可以在这个分支中撰写文章了
@@ -159,7 +159,7 @@ xcaddy build \
 
 `Caddyfile` 内容如下：
 
-```
+```Caddyfile
 example.com {
   tls yourmail@example.com
   encode zstd gzip
