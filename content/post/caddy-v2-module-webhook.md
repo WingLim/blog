@@ -33,7 +33,9 @@ categories:
 
 ### Caddyfile 格式
 
-需要注意的是，webhook 这个 handler 需要放在 `route`，因为为了正确响应 webhook request，caddy-webhook 不会执行下一个 handler。
+需要注意的是，如果你在一个 `route` 中有多个 handle，webhook 这个 handler 需要放在最后，因为为了正确响应 webhook request，`caddy-webhook` 不会执行下一个 handler。
+
+这里建议单独给 webhook 设置一个路径。
 
 ```
 webhook [<repo> <path>] {
