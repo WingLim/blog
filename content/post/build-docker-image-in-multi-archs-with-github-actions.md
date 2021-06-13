@@ -3,7 +3,7 @@ title: "使用 GiHub Actions 构建多架构 Docker 镜像"
 date: 2021-04-17T15:00:52+08:00
 slug: build-docker-image-in-multi-archs-with-github-actions
 tags:
-- GitHub
+- GitHub Actions
 - Docker Image
 categories:
 - Tech
