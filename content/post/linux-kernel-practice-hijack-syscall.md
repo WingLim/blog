@@ -9,11 +9,8 @@ tags:
 - Linux
 - Kernel
 - Module
-series:
-- Linux Kernel Practice
 categories:
-- 学习
-image:
+- Learn
 ---
 
 通过劫持系统调用表，将原有系统调用替换成自定义系统调用。

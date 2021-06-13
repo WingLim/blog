@@ -1,11 +1,13 @@
 ---
-title: "使用GiHub Actions构建多架构Docker镜像"
+title: "使用 GiHub Actions 构建多架构 Docker 镜像"
 date: 2021-04-17T15:00:52+08:00
 slug: build-docker-image-in-multi-archs-with-github-actions
 tags:
 - GitHub
 - Docker Image
 categories:
+- Tech
+- DevOps
 ---
 
 Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。

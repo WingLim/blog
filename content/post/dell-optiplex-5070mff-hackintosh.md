@@ -1,5 +1,5 @@
 ---
-title: "戴尔5070MFF黑苹果体验"
+title: "戴尔 5070MFF 黑苹果体验"
 author: WingLim
 date: 2021-03-10T19:09:40+08:00
 slug: dell-optiplex-5070mff-hackintosh

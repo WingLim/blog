@@ -7,6 +7,8 @@ tags:
 - Hugo
 - GitHub Actions
 categories:
+- Tech
+- DevOps
 ---
 
 

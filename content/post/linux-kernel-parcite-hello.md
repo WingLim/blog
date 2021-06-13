@@ -9,11 +9,8 @@ tags:
 - Linux
 - Kernel
 - Module
-series:
-- Linux Kernel Practice
 categories:
-- 学习
-image:
+- Learn
 ---
 
 实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息。
