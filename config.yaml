@@ -3,7 +3,7 @@ languageCode: "zh-cn"
 theme: "hugo-tania"
 
 params:
-  titleEmoji: <img src="favicon.ico" />
+  titleLogo: favicon.ico
   socialOptions:
     github: https://github.com/WingLim
     twitter: https://twitter.com/WingLims
