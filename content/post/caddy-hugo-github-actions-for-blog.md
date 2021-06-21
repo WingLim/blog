@@ -179,6 +179,16 @@ example.com {
   root blog
   file_server
   
+  handle_errors {
+  	@404 {
+  		expression {http.error.status_code} == 404
+  	}
+  	handle @404 {
+  		rewrite * /404.html
+  		file_server
+  	}
+  }
+  
   route /webhook {
     webhook {
       repo https://github.com/username/username.github.io.git
