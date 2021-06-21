@@ -171,7 +171,7 @@ xcaddy build &lt;span class="se">\
 &lt;/ul>
 &lt;p>需要注意的是：在进行跨平台构建时，如果使用了基础镜像，需要确保对应的&lt;strong>基础镜像&lt;/strong>也有对应的架构，否则会构建失败。&lt;/p></description></item><item><title>戴尔 5070MFF 黑苹果体验</title><link>/post/dell-optiplex-5070mff-hackintosh/</link><pubDate>Wed, 10 Mar 2021 19:09:40 +0800</pubDate><author>WingLim</author><guid>/post/dell-optiplex-5070mff-hackintosh/</guid><description>
 &lt;p>EFI开源托管在GitHub：&lt;a href="https://github.com/WingLim/Dell-Optiplex-5070mff-Hackintosh">Dell-Optiplex-5070mff-Hackintosh&lt;/a>&lt;/p>
-&lt;p>&lt;img src="https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210315163415.png" alt="Tested in Big Sur 11.2.3">&lt;/p>
+&lt;p>&lt;img loading="lazy" src="https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210315163415.png" alt="Tested in Big Sur 11.2.3" />&lt;/p>
 &lt;h2 id="配置介绍">配置介绍&lt;/h2>
 &lt;p>硬件配置：&lt;/p>
 &lt;ul>
@@ -221,7 +221,7 @@ setup_var 0x8DC 0x02
 &lt;li>
 &lt;p>核显驱动&lt;/p>
 &lt;p>戴尔主板的显示总线在&lt;code>1号&lt;/code>和&lt;code>2号&lt;/code>，注入核显型号后还需要注入总线ID，因为主板上只有两个DP接口，所以把&lt;code>con2&lt;/code>屏蔽掉了。但5070MFF主板上有接口可以扩展出新的视频输出，如果有需要需要自己测试。&lt;/p>
-&lt;p>&lt;img src="https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210314204729.png" alt="核显驱动设置">&lt;/p>
+&lt;p>&lt;img loading="lazy" src="https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210314204729.png" alt="核显驱动设置" />&lt;/p>
 &lt;/li>
 &lt;li>
 &lt;p>DW1820A的Wi-Fi驱动&lt;/p>
@@ -471,7 +471,7 @@ setup_var 0x8DC 0x02
 &lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="进行测试">进行测试&lt;/h2>
 &lt;p>项目根目录下执行&lt;/p>
 &lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="nv">CODECOV&lt;/span>&lt;span class="o">=&lt;/span>ON &lt;span class="nv">IWYU&lt;/span>&lt;span class="o">=&lt;/span>OFF make cmake coverage
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>执行效果如下&lt;img src="/images/image-20201222220536632.png" alt="image-20201222220536632">&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>执行效果如下&lt;img loading="lazy" src="/images/image-20201222220536632.png" alt="image-20201222220536632" width=1922 height="1338" />&lt;/p>
 &lt;p>到 &lt;a href="https://about.codecov.io">CodeCov&lt;/a> 上创建项目，获取 TOKEN，执行如下命令上传测试报告&lt;/p>
 &lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;YOUR TOKEN&amp;#34;&lt;/span> &amp;gt; .cc_token
 bash &amp;lt;&lt;span class="o">(&lt;/span>curl -s https://codecov.io/bash&lt;span class="o">)&lt;/span> -f cmake-build-debug/codecov.xml -t @.cc_token
