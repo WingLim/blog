@@ -92,6 +92,15 @@ xcaddy build &lt;span class="se">\
 &lt;span class="p">}&lt;/span>
 &lt;span class="k">root&lt;/span> &lt;span class="s">blog&lt;/span>
 &lt;span class="k">file_server&lt;/span>
+&lt;span class="k">handle_errors&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nd">@404&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">expression&lt;/span> &lt;span class="se">{http.error.status_code}&lt;/span> &lt;span class="s">==&lt;/span> &lt;span class="mi">404&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">handle&lt;/span> &lt;span class="nd">@404&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">rewrite&lt;/span> &lt;span class="s">*&lt;/span> &lt;span class="s">/404.html&lt;/span>
+&lt;span class="k">file_server&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
 &lt;span class="k">route&lt;/span> &lt;span class="nd">/webhook&lt;/span> &lt;span class="p">{&lt;/span>
 &lt;span class="k">webhook&lt;/span> &lt;span class="p">{&lt;/span>
 &lt;span class="k">repo&lt;/span> &lt;span class="s">https://github.com/username/username.github.io.git&lt;/span>
