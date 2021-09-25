@@ -6,4 +6,4 @@ Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优�
 当然，有人会说这类文章网上已经有很多了，为什么还要重复再写一篇。一个重要的原因是网上的的文章都是基于 Caddy V1 版本，而在 Caddy 更新到 V2 版本后，之前的插件都已经失效了。
 本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置第 3 步的部署流程。
 为了实现第 3 步，我给 Caddy 写了一个模块：caddy-webhook，下面通过具体的步骤来展示如何使用这个模块。
-建立仓库 建立一个 username.github.io 的仓库会自动配置 GitHub Page，并且可以通过直接访问 username.</description></item></channel></rss>
+建立仓库 建立一个 username.</description></item></channel></rss>

@@ -6,7 +6,7 @@ Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优�
 当然，有人会说这类文章网上已经有很多了，为什么还要重复再写一篇。一个重要的原因是网上的的文章都是基于 Caddy V1 版本，而在 Caddy 更新到 V2 版本后，之前的插件都已经失效了。
 本着用新不用旧的原则，我也将 Caddy 更新到 V2，但也因为这样需要重新配置第 3 步的部署流程。
 为了实现第 3 步，我给 Caddy 写了一个模块：caddy-webhook，下面通过具体的步骤来展示如何使用这个模块。
-建立仓库 建立一个 username.github.io 的仓库会自动配置 GitHub Page，并且可以通过直接访问 username.</description></item><item><title>使用 GiHub Actions 构建多架构 Docker 镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。
+建立仓库 建立一个 username.</description></item><item><title>使用 GiHub Actions 构建多架构 Docker 镜像</title><link>/post/build-docker-image-in-multi-archs-with-github-actions/</link><pubDate>Sat, 17 Apr 2021 15:00:52 +0800</pubDate><guid>/post/build-docker-image-in-multi-archs-with-github-actions/</guid><description>Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。
 但仍存在一个问题，如果你直接使用 docker build ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 Dockerfile 拉到虚拟机中进行构建，但这会花费很多时间。
 通过 GitHub Actions，我们可以在 push 代码的时候，自动进行多架构的镜像构建，不再需要手动构建并推送到 Docker Hub 等镜像仓库中。
 下面是一个示例：
@@ -20,10 +20,7 @@ name:buildon:push:branches:[main ]paths-ignore:- &amp;#34;README.md&amp;#34;jobs
 准系统: Dell OptiPlex 5070 Micro Form Factor CPU: Intel® Core™ i5-9500T Processor 核显: Intel® UHD Graphics 630 内存: 8GB DDR4 2666 * 2 双通道 硬盘: KIOXIA RC10 NVME SSD 500G Wi-Fi &amp;amp; Bluetooth: DW1820A 声卡: Realtek ALC255(3234) 板载网卡: Intel I219-LM7 接口配置：
 前面板：
 通用音频接口 有线音频输出 Type C(USB3.1 Gen2 PowerShare) 注：不是雷电接口 Type-A USB接口(USB 3.1 Gen1 PowerShare) 后面板：
-RJ-45网线接口 Type-A USB接口(USB 3.1 Gen1) * 4 DP接口 * 2 正常功能 CPU睿频 核显加速 Airdrop &amp;amp; Airplay &amp;amp; Handoff 所有USB接口 有线及无线网 扬声器 &amp;amp; 通用音频接口 &amp;amp; 有线音频输出 睡眠 安装前准备 安装黑苹果前需要使用GRUB，将关闭CFG锁和设置预分配的DVMT内存到64M。</description></item><item><title>C语言项目单元测试实践</title><link>/post/c-unittest-example/</link><pubDate>Tue, 22 Dec 2020 21:50:57 +0800</pubDate><guid>/post/c-unittest-example/</guid><description>前言 最近一段时间在写C语言的课程设计，之前在用 Golang 的时候，Golang 自带单元测试，用起来非常舒服，而C语言不使用框架写测试则会很麻烦，下面通过一个简单的项目来实践在C语言中进行单元测试。
+RJ-45网线接口 Type-A USB接口(USB 3.</description></item><item><title>C语言项目单元测试实践</title><link>/post/c-unittest-example/</link><pubDate>Tue, 22 Dec 2020 21:50:57 +0800</pubDate><guid>/post/c-unittest-example/</guid><description>前言 最近一段时间在写C语言的课程设计，之前在用 Golang 的时候，Golang 自带单元测试，用起来非常舒服，而C语言不使用框架写测试则会很麻烦，下面通过一个简单的项目来实践在C语言中进行单元测试。
 项目中使用 CMocka 作为单元测试框架，使用 CodeCov 检查代码覆盖率。
 完整项目代码可以在 GitHub 上查看：c-unittest-example
-项目目录 . ├── CMakeLists.txt ├── Makefile ├── README.md ├── cmake │ ├── CMocka.cmake │ └── CodeCov.cmake ├── include │ └── add.h ├── src │ └── add.c └── test ├── CMakeLists.txt ├── add_tests.c └── test.h 4 directories, 10 files 目录说明 cmake: 存放 CMake 的模块文件，包括 CMocka 和 CodeCov。
-include: 项目头文件 src: 项目源代码 test: 单元测试代码
-项目设置文件 Makefile 用于便携执行单元测试和构建程序
-.PHONY: cmake test BUILD_TYPE ?</description></item></channel></rss>
+项目目录 . ├── CMakeLists.txt ├── Makefile ├── README.md ├── cmake │ ├── CMocka.cmake │ └── CodeCov.cmake ├── include │ └── add.h ├── src │ └── add.c └── test ├── CMakeLists.txt ├── add_tests.c └── test.h 4 directories, 10 files 目录说明 cmake: 存放 CMake 的模块文件，包括 CMocka 和 CodeCov。</description></item></channel></rss>
