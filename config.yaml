@@ -8,6 +8,14 @@ params:
     github: https://github.com/WingLim
     twitter: https://twitter.com/WingLims
 
+  comments:
+    enable: true
+    provider: cusdis
+
+    cusdis:
+        host:
+        id: e765a45d-5232-447f-95f8-5c32808e4444
+
 menu:
   header:
     - name: Articles
