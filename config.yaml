@@ -3,6 +3,7 @@ languageCode: "zh-cn"
 theme: "hugo-tania"
 
 params:
+  author: WingLim
   titleLogo: favicon.ico
   socialOptions:
     github: https://github.com/WingLim
