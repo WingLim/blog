@@ -10,7 +10,7 @@ params:
     twitter: https://twitter.com/WingLims
 
   comments:
-    enable: true
+    enabled: true
     provider: cusdis
 
     cusdis:
