@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Rust on Lim's Blog</title><link>/tags/rust/</link><description>Recent content in Rust on Lim's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 07 Oct 2021 15:14:40 +0800</lastBuildDate><atom:link href="/tags/rust/index.xml" rel="self" type="application/rss+xml"/><item><title>DEET 实现 step in, out 和 over</title><link>/post/implement-step-in-out-over-with-deet/</link><pubDate>Thu, 07 Oct 2021 15:14:40 +0800</pubDate><guid>/post/implement-step-in-out-over-with-deet/</guid><description>DEET(Dodgy Eliminator of Errors and Tragedies) 是 CS 100L 的 Project1
+在完成 7 个 Milestone 后，DEET 还提供了一些可选扩展，这篇文章用来记录实现 Next Line 的几个命令：
+step in - step step out - finish step over - next 完整代码请看: deet
+打印源码 在开始之前先实现打印源码，方便后续查看当前执行到了哪一步
+通过 debug_data.get_line_from_addr() 这个方法可以获取到当前执行的行信息
+然后再读取源代码文件并打印
+pubfn print_source(&amp;amp;self,line: &amp;amp;Line){letpath=line.file.clone();ifletOk(source)=fs::read_to_string(path){letline_content=source.lines().nth(line.number-1).unwrap();println!(&amp;#34;\n{}{}&amp;#34;,line.number,line_content);}} 辅助函数 为了方便后续实现，抽象出几个辅助函数
+/// 跳过断点 /// 1. 恢复 instruction 内容 /// 2. 修改 rip 指针到断点开始前 /// 3. 执行 instruction /// 4.</description></item></channel></rss>
