@@ -1,8 +1,8 @@
 ---
-title: "DEET 实现 step in, out 和 over"
+title: "CS 110L: DEET 实现 step in, out 和 over"
 author: WingLim
 date: 2021-10-07T15:14:40+08:00
-slug: implement-step-in-out-over-with-deet
+slug: cs-110l-implement-step-in-out-over-with-deet
 tags:
 - Debugger
 - Rust
