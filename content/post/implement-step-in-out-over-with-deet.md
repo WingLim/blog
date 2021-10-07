@@ -205,6 +205,6 @@ pub fn step_over(&mut self, debug_data: &DwarfData) -> Result<Status, nix::Error
 }
 ```
 
-## 感谢
+## 参考
 
 - [https://blog.tartanllama.xyz/writing-a-linux-debugger-dwarf-step/](https://blog.tartanllama.xyz/writing-a-linux-debugger-dwarf-step/)
