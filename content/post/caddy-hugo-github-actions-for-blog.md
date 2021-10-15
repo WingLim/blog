@@ -34,6 +34,8 @@ Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优�
 
 为了实现第 3 步，我给 Caddy 写了一个模块：[caddy-webhook](https://github.com/WingLim/caddy-webhook)，下面通过具体的步骤来展示如何使用这个模块。
 
+
+
 ## 建立仓库
 
 建立一个 `username.github.io` 的仓库会自动配置 GitHub Page，并且可以通过直接访问 `username.github.io` 来访问到 `main` 分支中的静态页面。
@@ -58,6 +60,8 @@ hugo new site .
 ```
 
 然后就可以在 `hugo` 分支中撰写文章了
+
+
 
 ## 使用 GitHub Actions
 
@@ -114,6 +118,8 @@ jobs:
           publish_dir: ./public
           publish_branch: main
 ```
+
+
 
 ## 部署 Caddy
 
