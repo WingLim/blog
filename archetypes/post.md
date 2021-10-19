@@ -2,7 +2,8 @@
 title: "{{ replace .Name "-" " " | title }}"
 date: {{ .Date }}
 slug: {{ .Name }}
-tags: 
+description:
+tags:
 categories:
 ---
 
