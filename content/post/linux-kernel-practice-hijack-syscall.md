@@ -3,8 +3,7 @@ title: "Linux Kernel 实践(二)：劫持系统调用"
 author: WingLim
 date: 2020-03-06T23:17:11+08:00
 slug: linux-kernel-practice-hijack-syscall
-description:
-draft: false
+description: 站住，打劫
 tags:
 - Linux
 - Kernel
@@ -40,7 +39,7 @@ categories:
 
 ```c
 asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
-	[0 ... __NR_syscall_max] = &sys_ni_syscall,
+    [0 ... __NR_syscall_max] = &sys_ni_syscall,
 #include <asm/syscalls_64.h>
 };
 ```
@@ -52,10 +51,10 @@ out := $(obj)/../../include/generated/asm
 syscall64 := $(srctree)/$(src)/syscall_64.tbl
 systbl := $(srctree)/$(src)/syscalltbl.sh
 $(out)/syscalls_64.h: $(syscall64) $(systbl)
-	$(call if_changed,systbl)
+    $(call if_changed,systbl)
 ```
 
-Makefile 通过 [entry/syscalls/syscalltbl.sh](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh) 将 `syscall_64.tbl` 格式化成 `__SYSCALL_${abi}($nr, $entry, $compat)` 
+Makefile 通过 [entry/syscalls/syscalltbl.sh](https://elixir.bootlin.com/linux/v4.4/source/arch/x86/entry/syscalls/syscalltbl.sh) 将 `syscall_64.tbl` 格式化成 `__SYSCALL_${abi}($nr, $entry, $compat)`
 
 ```sh
 #!/bin/sh
@@ -65,12 +64,12 @@ out="$2"
 
 grep '^[0-9]' "$in" | sort -n | (
     while read nr abi name entry compat; do
-	abi=`echo "$abi" | tr '[a-z]' '[A-Z]'`
-	if [ -n "$compat" ]; then
-	    echo "__SYSCALL_${abi}($nr, $entry, $compat)"
-	elif [ -n "$entry" ]; then
-	    echo "__SYSCALL_${abi}($nr, $entry, $entry)"
-	fi
+    abi=`echo "$abi" | tr '[a-z]' '[A-Z]'`
+    if [ -n "$compat" ]; then
+        echo "__SYSCALL_${abi}($nr, $entry, $compat)"
+    elif [ -n "$entry" ]; then
+        echo "__SYSCALL_${abi}($nr, $entry, $entry)"
+    fi
     done
 ) > "$out"
 ```
@@ -94,9 +93,9 @@ __SYSCALL_COMMON(1, sys_write, sys_write)
 ```c
 asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
     [0 ... __NR_syscall_max] = &sys_ni_syscall,
-	[0] = sys_read,
-	[1] = sys_write,
-	...
+    [0] = sys_read,
+    [1] = sys_write,
+    ...
 };
 ```
 
@@ -107,8 +106,6 @@ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
 1. 通过 `/boot/System.map` 获取
 2. 通过 `/proc/kallsyms` 获取
 3. 通过暴力搜索获取
-
-
 
 前面两种方式基本一致，都是通过读取文件并过滤的方式获取。
 
@@ -143,7 +140,7 @@ ffffffff81a01520 R ia32_sys_call_table
 
 内核内存空间的起始地址 `PAGE_OFFSET` 变量和 `sys_close` 系统调用在内核模块中是可见的。系统调用号在同一[ABI](https://en.wikipedia.org/wiki/Application_binary_interface)（x86与x64属于不同ABI）中是高度后向兼容的，可以直接引用（如 `__NR_close` ）。我们可以从内核空间起始地址开始，把每一个指针大小的内存假设成 `sys_call_table` 的地址，并用 `__NR_close` 索引去访问它的成员，如果这个值与 `sys_close` 的地址相同的话，就可以认为找到了 `sys_call_table` 的地址。
 
-更多有关 `PAGE_OFFSET` 的内容请看：[ARM64 Linux 内核虚拟地址空间](https://geneblue.github.io/2017/04/02/ARM64 Linux 内核虚拟地址空间/)
+更多有关 `PAGE_OFFSET` 的内容请看：[ARM64 Linux 内核虚拟地址空间](https://geneblue.github.io/2017/04/02/android/sec--linux-kernel-arm64-virtual-address-space/)
 
 下面来看搜索 `sys_call_table` 的函数：
 
@@ -163,8 +160,6 @@ unsigned long **get_sys_call_table(void)
   return NULL;
 }
 ```
-
-
 
 ## 劫持系统调用
 
@@ -324,8 +319,6 @@ module_init(init_addsyscall);
 module_exit(exit_addsyscall);
 ```
 
-
-
 #### 添加 `Makefile`
 
 ```makefile
@@ -354,8 +347,6 @@ make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic'
 # 插入模块
 root@0xDayServer:~/dev/kernel/nice# insmod nice.ko
 ```
-
-
 
 #### 模块测试代码
 
@@ -390,8 +381,6 @@ int main() {
 }
 ```
 
-
-
 #### 编译测试代码并测试
 
 ```bash
@@ -422,25 +411,21 @@ nice: -15
 root@0xDayServer:~/dev/kernel/nice# tail /var/log/kern.log
 Mar  7 03:52:47 0xDayServer kernel: [118009.435431] nice of the process：0
 Mar  7 03:52:47 0xDayServer kernel: [118009.435434] prio of the process：20
-Mar  7 03:52:47 0xDayServer kernel: [118009.435466] nice value edit before：0	edit after：-5
+Mar  7 03:52:47 0xDayServer kernel: [118009.435466] nice value edit before：0   edit after：-5
 Mar  7 03:52:47 0xDayServer kernel: [118009.435475] nice of the process：-5
 Mar  7 03:52:47 0xDayServer kernel: [118009.435476] prio of the process：15
 Mar  7 03:52:47 0xDayServer kernel: [118009.435481] nice of the process：-5
 Mar  7 03:52:47 0xDayServer kernel: [118009.435481] prio of the process：15
-Mar  7 03:52:47 0xDayServer kernel: [118009.435485] nice value edit before：-5	edit after：-15
+Mar  7 03:52:47 0xDayServer kernel: [118009.435485] nice value edit before：-5  edit after：-15
 Mar  7 03:52:47 0xDayServer kernel: [118009.435494] nice of the process：-15
 Mar  7 03:52:47 0xDayServer kernel: [118009.435495] prio of the process：5
 ```
-
-
 
 ## 尾语
 
 这里提到的劫持系统调用，是 RootKit 中的一部分，RootKit 是一组工具，目标是隐藏它自身存在并继续向攻击者提供系统访问。所以我们可以通过劫持系统调用来做一些更有趣的事情，比如劫持 `sys_open` 来监视文件的创建。
 
 同时，获取 `sys_call_table` 也有很多其他方式，比如 IDT（Interrupt Descriptor Table）、MSRs（Model-Specific Registers）在参考三中有它们的实现方式，总之，Linux Kernel 还挺有趣的，接下来再继续探索更多可玩的地方。
-
-
 
 ## 参考
 

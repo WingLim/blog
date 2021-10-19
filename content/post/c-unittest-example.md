@@ -23,11 +23,9 @@ typora-root-url: ../../static
 
 完整项目代码可以在 GitHub 上查看：[c-unittest-example](https://github.com/WingLim/c-unittest-example)
 
-
-
 ## 项目目录
 
-```
+```shell
 .
 ├── CMakeLists.txt
 ├── Makefile
@@ -47,15 +45,13 @@ typora-root-url: ../../static
 4 directories, 10 files
 ```
 
-## 目录说明 
+## 目录说明
 
 `cmake`: 存放 CMake 的模块文件，包括 CMocka 和 CodeCov。
 
 `include`: 项目头文件
 `src`: 项目源代码
 `test`: 单元测试代码
-
-
 
 ## 项目设置文件
 
@@ -75,26 +71,24 @@ TEST_SUITES = add_tests
 
 # 清理文件
 clean:
-	@rm -rf $(BUILD_DIR)
+    @rm -rf $(BUILD_DIR)
 
 # 创建 cmake-build-debug，并在里面执行 cmake
 cmake:
-	@mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCODE_COVERAGE=$(CODECOV) -DIWYU=$(IWYU) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -j 4 ..
+    @mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCODE_COVERAGE=$(CODECOV) -DIWYU=$(IWYU) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -j 4 ..
 
 # 构建文件
 build: cmake
-	@cd $(BUILD_DIR) && make project -j 4
+    @cd $(BUILD_DIR) && make project -j 4
 
 # 进行单元测试
 test:
-	@cd $(BUILD_DIR) && make $(TEST_SUITES) test CTEST_OUTPUT_ON_FAILURE=TRUE
+    @cd $(BUILD_DIR) && make $(TEST_SUITES) test CTEST_OUTPUT_ON_FAILURE=TRUE
 
 # 测试代码覆盖率
 coverage: test
-	@cd $(BUILD_DIR) && make codecov CMAKE_BUILD_TYPE=$(BUILD_TYPE)
+    @cd $(BUILD_DIR) && make codecov CMAKE_BUILD_TYPE=$(BUILD_TYPE)
 ```
-
-
 
 ### `cmake/CMocka.cmake`
 
@@ -136,8 +130,6 @@ ExternalProject_Get_Property(cmocka_ep source_dir)
 set(CMOCKA_INCLUDE_DIR ${source_dir}/include GLOBAL)
 ```
 
-
-
 ### `cmake/CodeCov.cmake`
 
 添加 CodeCov 到项目中
@@ -176,8 +168,6 @@ add_custom_target(codecov
         COMMAND ${GCOVR_PATH} --xml --exclude-throw-branches -r .. --object-directory "${PROJECT_BINARY_DIR}" -e ".*/test/.*" -e ".*/usr/.*" -o codecov.xml)
 ```
 
-
-
 ### `CMakeLists.txt`
 
 设置当前项目
@@ -200,7 +190,7 @@ endif ()
 # 设置 include-what-you-use
 option(IWYU "Run include-what-you-use with the compiler" OFF)
 if (IWYU)
-		# 寻找 iwyu
+    # 寻找 iwyu
     find_program(IWYU_COMMAND NAMES include-what-you-use iwyu)
     if (NOT IWYU_COMMAND)
         message(FATAL_ERROR "CMAKE_IWYU is ON but include-what-you-use is not found!")
@@ -228,8 +218,6 @@ target_include_directories(project
 add_subdirectory(test)
 ```
 
-
-
 ### `test/CMakeLists.txt`
 
 设置项目的单元测试
@@ -251,8 +239,6 @@ endfunction()
 add_test_suite(add_tests)
 ```
 
-
-
 ## 项目源码
 
 这里实现一个可以传可变参数的加法函数。
@@ -267,8 +253,6 @@ int add(int count, ...);
 
 #endif //PROJECT_TEST_H
 ```
-
-
 
 ### `add.c`
 
@@ -288,8 +272,6 @@ int add(int count, ...) {
     return sum;
 }
 ```
-
-
 
 ### `test/test.h`
 
@@ -313,8 +295,6 @@ int main() {
 
 #endif //PROJECT_TEST_H
 ```
-
-
 
 ### `test/add_tests.c`
 
@@ -348,8 +328,6 @@ int run_all_tests() {
 }
 ```
 
-
-
 ## 进行测试
 
 项目根目录下执行
@@ -360,16 +338,12 @@ CODECOV=ON IWYU=OFF make cmake coverage
 
 执行效果如下![image-20201222220536632](/images/image-20201222220536632.png)
 
-
-
 到 [CodeCov](https://about.codecov.io) 上创建项目，获取 TOKEN，执行如下命令上传测试报告
 
 ```shell
 echo "YOUR TOKEN" > .cc_token
 bash <(curl -s https://codecov.io/bash) -f cmake-build-debug/codecov.xml -t @.cc_token
 ```
-
-
 
 项目也可以使用 GitHub Actions 进行自动化构建和上传
 

@@ -1,6 +1,7 @@
 ---
 title: "Caddy2 + Hugo + Github Actions 的自动化部署博客方案"
 date: 2021-05-08T18:35:53+08:00
+description: 解放你部署博客的双手
 slug: caddy-hugo-github-actions-for-blog
 tags:
 - Caddy
@@ -19,13 +20,9 @@ categories:
 2. GitHub Actions 自动构建并推送到 `main` 分支。
 3. GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。
 
-
-
 不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。
 
 而使用 GitHub Actions 先构建推送到 `main`，然后再在服务器上拉取的原因是可以在 GitHub Page 上有一个备份，服务器出现故障时可以先 302 重定向到 GitHub Page，解决故障后切换回来。
-
-
 
 为了实现这个流程，在服务器上需要用到一个服务：Caddy
 
@@ -37,9 +34,7 @@ Caddy 是基于 go 编写的 web 服务器，相比于 nginx 和 apache 的优�
 
 为了实现第 3 步，我给 Caddy 写了一个模块：[caddy-webhook](https://github.com/WingLim/caddy-webhook)，下面通过具体的步骤来展示如何使用这个模块。
 
-
-
-### 建立仓库
+## 建立仓库
 
 建立一个 `username.github.io` 的仓库会自动配置 GitHub Page，并且可以通过直接访问 `username.github.io` 来访问到 `main` 分支中的静态页面。
 
@@ -64,9 +59,7 @@ hugo new site .
 
 然后就可以在 `hugo` 分支中撰写文章了
 
-
-
-### 使用 GitHub Actions
+## 使用 GitHub Actions
 
 创建 github workflows 文件夹
 
@@ -122,9 +115,7 @@ jobs:
           publish_branch: main
 ```
 
-
-
-### 部署 Caddy
+## 部署 Caddy
 
 创建文件夹用于保存 Caddy 的文件数据
 
@@ -160,10 +151,8 @@ go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 go get -v github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
 xcaddy build \
-	--with github.com/WingLim/caddy-webhook
+    --with github.com/WingLim/caddy-webhook
 ```
-
-
 
 `Caddyfile` 内容如下：
 
@@ -180,13 +169,13 @@ example.com {
   file_server
   
   handle_errors {
-  	@404 {
-  		expression {http.error.status_code} == 404
-  	}
-  	handle @404 {
-  		rewrite * /404.html
-  		file_server
-  	}
+    @404 {
+        expression {http.error.status_code} == 404
+    }
+    handle @404 {
+        rewrite * /404.html
+        file_server
+    }
   }
   
   route /webhook {
@@ -199,7 +188,5 @@ example.com {
   }
 }
 ```
-
-
 
 最后，我们就实现了文章开头所说的工作流程，剩下的就是写一些有价值的文章了。

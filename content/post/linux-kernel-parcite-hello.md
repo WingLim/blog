@@ -3,8 +3,7 @@ title: "Linux Kernel 实践(一)：Hello LKM"
 author: WingLim
 date: 2020-03-06T18:18:09+08:00
 slug: linux-kernel-practice-hello
-description:
-draft: false
+description: 实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息
 tags:
 - Linux
 - Kernel
@@ -13,9 +12,6 @@ categories:
 - Learn
 ---
 
-实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息。
-
-<!--more-->
 使用系统为 Ubuntu，内核版本为 4.4.0-93-generic
 
 ## 什么是内核模块
@@ -34,13 +30,11 @@ Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加
 
 通过包管理安装 Linux 内核头文件
 
-```bash
-$ sudo apt update
-$ apt-cache search linux-headers-$(uname -r)
-$ apt install linux-headers-$(uname -r)
+```shell
+sudo apt update
+apt-cache search linux-headers-$(uname -r)
+apt install linux-headers-$(uname -r)
 ```
-
-
 
 ## 开始写代码
 
@@ -127,8 +121,6 @@ module_init(helloModule_init);
 module_exit(helloModule_exit);
 ```
 
-
-
 ## 编译
 
 添加 `Makefile`
@@ -145,12 +137,10 @@ clean:
 
 注意：`Makefile` 的基本语法如下，如果缩进不是 `<TAB>` 的话，会报错。
 
-```
+```makefile
 <target>: [ <dependency > ]*
        [ <TAB> <command> <endl> ]+
 ```
-
-
 
 ```bash
 # 查看当前文件
@@ -174,8 +164,6 @@ make[1]: Leaving directory `/usr/src/linux-headers-4.4.0-93-generic'
 root@0xDayServer:~/dev/kernel/hello# ls
 hello.c  hello.ko  hello.mod.c  hello.mod.o  hello.o  Makefile  modules.order  Module.symvers
 ```
-
-
 
 ## 测试模块
 
@@ -208,27 +196,23 @@ hello                  16384  0
 root@0xDayServer:~/dev/kernel/hello# rmmod hello
 ```
 
-
-
 ### 查看 printk() 输出信息
 
 1. 使用 `dmesg` 命令
 
-```bash
-root@0xDayServer:~/dev/kernel/hello# dmesg
-[100339.744628] Hello LKM!
-[100432.211044] Goodbye LKM!
-```
+    ```bash
+    root@0xDayServer:~/dev/kernel/hello# dmesg
+    [100339.744628] Hello LKM!
+    [100432.211044] Goodbye LKM!
+    ```
 
 2. 查看内核日志
 
-```bash
-root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
-Mar  6 22:58:16 0xDayServer kernel: [100339.744628] Hello LKM!
-Mar  6 22:59:49 0xDayServer kernel: [100432.211044] Goodbye LKM!
-```
-
-
+    ```bash
+    root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
+    Mar  6 22:58:16 0xDayServer kernel: [100339.744628] Hello LKM!
+    Mar  6 22:59:49 0xDayServer kernel: [100432.211044] Goodbye LKM!
+    ```
 
 ## 自定义参数
 
@@ -262,8 +246,6 @@ module_init(helloModule_init);
 module_exit(helloModule_exit);
 ```
 
-
-
 ### 解析
 
 #### `static char *name = "LKM";`
@@ -272,7 +254,7 @@ module_exit(helloModule_exit);
 
 在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 `static` 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。
 
-#### `module_param(name, type, permissions)` 
+#### `module_param(name, type, permissions)`
 
 定义在 [linux/moduleparam.h#L125](https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125)
 
@@ -293,8 +275,6 @@ root@0xDayServer:~/dev/kernel/hello# insmod hello.ko name=World
 root@0xDayServer:~/dev/kernel/hello# dmesg
 [103386.179203] Hello World!
 ```
-
-
 
 ## 参考
 
