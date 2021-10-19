@@ -1,6 +1,7 @@
 ---
 title: "戴尔 5070MFF 黑苹果体验"
 author: WingLim
+description: 一台充满乐趣的小主机
 date: 2021-03-10T19:09:40+08:00
 slug: dell-optiplex-5070mff-hackintosh
 tags:
@@ -9,8 +10,6 @@ tags:
 categories:
 - Tech
 ---
-
-
 
 EFI开源托管在GitHub：[Dell-Optiplex-5070mff-Hackintosh](https://github.com/WingLim/Dell-Optiplex-5070mff-Hackintosh)
 
@@ -29,8 +28,6 @@ EFI开源托管在GitHub：[Dell-Optiplex-5070mff-Hackintosh](https://github.com
 - 声卡: Realtek ALC255(3234)
 - 板载网卡: Intel I219-LM7
 
-
-
 接口配置：
 
 前面板：
@@ -45,8 +42,6 @@ EFI开源托管在GitHub：[Dell-Optiplex-5070mff-Hackintosh](https://github.com
 - RJ-45网线接口
 - Type-A USB接口(USB 3.1 Gen1) * 4
 - DP接口 * 2
-
-
 
 ## 正常功能
 
@@ -72,11 +67,7 @@ setup_var 0x5BE 0x00
 setup_var 0x8DC 0x02
 ```
 
-
-
 系统安装镜像请到[黑果小兵的部落阁](https://blog.daliansky.net/)下载
-
-
 
 ## 遇到的问题
 
@@ -86,11 +77,8 @@ setup_var 0x8DC 0x02
 
    ![核显驱动设置](https://cdn.jsdelivr.net/gh/WingLim/assets@master/images/20210314204729.png)
 
-   
-
 2. DW1820A的Wi-Fi驱动
 
    使用该网卡时需要屏蔽4个pin引脚，屏蔽后插入即可直接驱动Wi-Fi
 
    具体需要屏蔽的pin引脚请看，使用胶带进行屏蔽即可：[DW1820A/BCM94350ZAE/BCM94356ZEPA50DX插入的正确姿势](https://blog.daliansky.net/DW1820A_BCM94350ZAE-driver-inserts-the-correct-posture.html)
-
