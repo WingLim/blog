@@ -1,13 +1,10 @@
-title: "Lim's Blog"
+title: "界限"
 languageCode: "zh-cn"
-theme: "hugo-tania"
+theme: "hugo-ray"
+paginate: 5
 
 params:
-  author: WingLim
-  titleLogo: favicon.ico
-  socialOptions:
-    github: https://github.com/WingLim
-    twitter: https://twitter.com/WingLims
+  logo: true
 
   comments:
     enabled: true
@@ -19,11 +16,12 @@ params:
 
 menu:
   header:
-    - name: Articles
-      url: "/articles/"
-  footer:
-    - name: RSS
-      url: "/index.xml"
+    - name: Archives
+      weight: 10
+      url: "/archives"
+    - name: Feed
+      weight: 30
+      url: "/feed.xml"
 
 markup:
   highlight:
@@ -31,6 +29,14 @@ markup:
   goldmark:
     renderer:
       unsafe: true
+  tableOfContents:
+    endLevel: 4
+    ordered: false
+    startLevel: 2
 
 outputs:
-  home: ["HTML", "RSS", "JSON"]
+  home: ["HTML", "RSS"]
+
+outputFormats:
+  RSS:
+    baseName: feed
