@@ -3,7 +3,7 @@ title: "Linux Kernel 实践(二)：劫持系统调用"
 author: WingLim
 date: 2020-03-06T23:17:11+08:00
 slug: linux-kernel-practice-hijack-syscall
-description: 站住，打劫
+description: 通过劫持系统调用表，将原有系统调用替换成自定义系统调用
 tags:
 - Linux
 - Kernel
@@ -12,9 +12,6 @@ categories:
 - Learn
 ---
 
-通过劫持系统调用表，将原有系统调用替换成自定义系统调用。
-
-<!--more-->
 使用系统为 Ubuntu，内核版本为 4.4.0-93-generic
 
 劫持系统调用有风险，请不要在实体机上尝试。
