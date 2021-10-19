@@ -95,7 +95,7 @@ module_init(helloModule_init);
 module_exit(helloModule_exit);
 ```
 
-#### 汇总
+### 汇总
 
 ```c
 /*hello.c*/
@@ -248,13 +248,13 @@ module_exit(helloModule_exit);
 
 ### 解析
 
-#### `static char *name = "LKM";`
+#### static char *name = "LKM";
 
 声明了一个全局静态字符指针变量 `name`，默认值为`"LKM"`
 
 在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 `static` 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。
 
-#### `module_param(name, type, permissions)`
+#### module_param(name, type, permissions)
 
 定义在 [linux/moduleparam.h#L125](https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125)
 
