@@ -2,6 +2,7 @@ title: "界限"
 languageCode: "zh-cn"
 theme: "hugo-ray"
 paginate: 5
+baseURL: https://blog.limx.dev
 
 params:
   logo: true
