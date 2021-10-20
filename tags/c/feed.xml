@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>C on 界限</title><link>/tags/c/</link><description>Recent content in C on 界限</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Tue, 22 Dec 2020 21:50:57 +0800</lastBuildDate><atom:link href="/tags/c/feed.xml" rel="self" type="application/rss+xml"/><item><title>C语言项目单元测试实践</title><link>/post/c-unittest-example/</link><pubDate>Tue, 22 Dec 2020 21:50:57 +0800</pubDate><guid>/post/c-unittest-example/</guid><description>前言 最近一段时间在写C语言的课程设计，之前在用 Golang 的时候，Golang 自带单元测试，用起来非常舒服，而C语言不使用框架写测试则会很麻烦，下面通过一个简单的项目来实践在C语言中进行单元测试。
+项目中使用 CMocka 作为单元测试框架，使用 CodeCov 检查代码覆盖率。
+完整项目代码可以在 GitHub 上查看：c-unittest-example
+项目目录 . ├── CMakeLists.txt ├── Makefile ├── README.md ├── cmake │ ├── CMocka.cmake │ └── CodeCov.cmake ├── include │ └── add.h ├── src │ └── add.c └── test ├── CMakeLists.txt ├── add_tests.c └── test.h 4 directories, 10 files 目录说明 cmake: 存放 CMake 的模块文件，包括 CMocka 和 CodeCov。
+include: 项目头文件 src: 项目源代码 test: 单元测试代码
+项目设置文件 Makefile 用于便携执行单元测试和构建程序
+.PHONY: cmake test BUILD_TYPE ?</description></item></channel></rss>

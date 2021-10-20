@@ -1,9 +1,8 @@
 <!doctype html><html lang=zh-cn>
-<head>
-<meta name=generator content="Hugo 0.88.1"><meta charset=utf-8>
+<head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="shortcut icon" type=image/png href=/favicon.png>
-<title>界限</title>
+<title>Archives | 界限</title>
 <script>(function(){let b=window.matchMedia('(prefers-color-scheme: dark)').matches===!0,c="light",a=a=>{document.documentElement.dataset.scheme=a};c=="dark"||b?a('dark'):a('light')})()</script>
 <link rel=stylesheet href=/scss/style.min.bb3ffd28977a1b831a4a4863a7de8802c193c8775866c581c61749bebe87eb35.css><script src=https://code.iconify.design/2/2.0.4/iconify.min.js></script></head>
 <body><header class=header>
@@ -15,7 +14,7 @@
 <nav class=navigation>
 <ul>
 <li>
-<a class=nav-link href=/archives>
+<a class="nav-link current" href=/archives>
 <span class=iconify data-icon=fluent:archive-multiple-24-regular data-width=24 data-height=24></span>
 Archives
 </a>
@@ -38,59 +37,53 @@ Feed
 </div>
 </div>
 </header><main class=page-content>
-<div class=page-container>
-<div class="post-intro hero">
-<h1 class=title>
-<a href=/post/caddy-hugo-github-actions-for-blog/ class=title-link>Caddy2 + Hugo + Github Actions 的自动化部署博客方案</a>
-</h1>
-<p class=description>解放你部署博客的双手</p>
-<div class=summary>
-<p>我的博客部署流程如下：</p>
-<ol>
-<li>写文章并推送到 <code>username.github.io</code> 仓库的 <code>hugo</code> 分支。</li>
-<li>GitHub Actions 自动构建并推送到 <code>main</code> 分支。</li>
-<li>GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。</li>
-</ol>
-<p>不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。</p>
-<p>而使用 GitHub Actions …</p>
+<div class=archive-page-header>
+<h1 class=archive-page-title>Archives</h1>
 </div>
-<a href=/post/caddy-hugo-github-actions-for-blog/ class=readmore>Continue reading</a>
+<div class=archives>
+<div class=archive-entry>
+<div class=archive-meta>
+<span>2021</span>
 </div>
-<div class=blog-list>
-<a href=/post/build-docker-image-in-multi-archs-with-github-actions/ class=post-item>
-<div class="post-intro solo">
-<span class=date>April 17, 2021</span>
-<h1 class=title>
-使用 GiHub Actions 构建多架构 Docker 镜像
-</h1>
-</div>
+<div class=archive-body>
+<a href=/post/caddy-hugo-github-actions-for-blog/ class=archive-item>
+<span>May 08, 2021</span>
+<h1>Caddy2 + Hugo + Github Actions 的自动化部署博客方案</h1>
+<p>解放你部署博客的双手</p>
 </a>
-<a href=/post/dell-optiplex-5070mff-hackintosh/ class=post-item>
-<div class="post-intro solo">
-<span class=date>March 10, 2021</span>
-<h1 class=title>
-戴尔 5070MFF 黑苹果体验
-</h1>
-<p class=description>一台充满乐趣的小主机</p>
-</div>
+<a href=/post/build-docker-image-in-multi-archs-with-github-actions/ class=archive-item>
+<span>April 17, 2021</span>
+<h1>使用 GiHub Actions 构建多架构 Docker 镜像</h1>
+<p></p>
 </a>
-<a href=/post/c-unittest-example/ class=post-item>
-<div class="post-intro solo">
-<span class=date>December 22, 2020</span>
-<h1 class=title>
-C语言项目单元测试实践
-</h1>
-</div>
+<a href=/post/dell-optiplex-5070mff-hackintosh/ class=archive-item>
+<span>March 10, 2021</span>
+<h1>戴尔 5070MFF 黑苹果体验</h1>
+<p>一台充满乐趣的小主机</p>
 </a>
-<a href=/post/linux-kernel-practice-hijack-syscall/ class=post-item>
-<div class="post-intro solo">
-<span class=date>March 06, 2020</span>
-<h1 class=title>
-Linux Kernel 实践(二)：劫持系统调用
-</h1>
-<p class=description>通过劫持系统调用表，将原有系统调用替换成自定义系统调用</p>
 </div>
+</div>
+<div class=archive-entry>
+<div class=archive-meta>
+<span>2020</span>
+</div>
+<div class=archive-body>
+<a href=/post/c-unittest-example/ class=archive-item>
+<span>December 22, 2020</span>
+<h1>C语言项目单元测试实践</h1>
+<p></p>
 </a>
+<a href=/post/linux-kernel-practice-hijack-syscall/ class=archive-item>
+<span>March 06, 2020</span>
+<h1>Linux Kernel 实践(二)：劫持系统调用</h1>
+<p>通过劫持系统调用表，将原有系统调用替换成自定义系统调用</p>
+</a>
+<a href=/post/linux-kernel-practice-hello/ class=archive-item>
+<span>March 06, 2020</span>
+<h1>Linux Kernel 实践(一)：Hello LKM</h1>
+<p>实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息</p>
+</a>
+</div>
 </div>
 </div>
 </main><footer class=footer>

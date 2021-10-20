@@ -1,28 +1,156 @@
-<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=theme-color content="dark"><title>Linux Kernel 实践(一)：Hello LKM | Lim's Blog</title><meta property="og:site_name" content><meta property="og:title" content="Linux Kernel 实践(一)：Hello LKM | Lim's Blog"><meta itemprop=name content="Linux Kernel 实践(一)：Hello LKM | Lim's Blog"><meta name=twitter:title content="Linux Kernel 实践(一)：Hello LKM | Lim's Blog"><meta name=application-name content="Linux Kernel 实践(一)：Hello LKM | Lim's Blog"><meta name=description content><meta name=twitter:description content><meta itemprop=description content><meta property="og:description" content><meta property="og:type" content="article"><meta property="article:publisher" content="WingLim"><meta property="og:article:published_time" content="2020-03-06T18:18:09+0800"><meta property="article:published_time" content="2020-03-06T18:18:09+0800"><meta property="og:article:author" content="Wing lim"><meta property="article:author" content="Wing lim"><meta name=author content="Wing lim"><script defer type=application/ld+json>{"@context":"http://schema.org","@type":"Article","headline":"Linux Kernel 实践(一)：Hello LKM","author":{"@type":"Person","name":"WingLim"},"datePublished":"2020-03-06","description":"","wordCount":481,"mainEntityOfPage":"True","dateModified":"2020-03-06","publisher":{"@type":"Organization","name":"WingLim","logo":{"@type":"imageObject","url":"favicon.ico"}}}</script><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=stylesheet href=/sass/main.min.ab99ff095f832511e24ffb2fba2b51ad473b2f7e9301d674eba2c6c3a6e8bd81.css></head><script>(function(){const b='ThemeColorScheme',a=localStorage.getItem(b),c=window.matchMedia('(prefers-color-scheme: dark)').matches===!0;a=='dark'||a==='auto'&&c?document.documentElement.dataset.userColorScheme='dark':document.documentElement.dataset.userColorScheme='light'})()</script><body class=dark><nav class=navbar><div class=container><div class=flex><div><a class=brand href=/><img src=/favicon.ico>
-Lim's Blog</a></div><div class=flex><a href=/articles/>Articles</a>
-<button id=dark-mode-button><svg class="light" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1em" height="1em" style="-ms-transform:rotate(360deg);-webkit-transform:rotate(360deg);transform:rotate(360deg)" viewBox="0 0 36 36"><path fill="#ffd983" d="M30.312.776C32 19 20 32 .776 30.312c8.199 7.717 21.091 7.588 29.107-.429C37.9 21.867 38.03 8.975 30.312.776z"/><path d="M30.705 15.915a1.163 1.163.0 101.643 1.641 1.163 1.163.0 00-1.643-1.641zm-16.022 14.38a1.74 1.74.0 000 2.465 1.742 1.742.0 100-2.465zm13.968-2.147a2.904 2.904.0 01-4.108.0 2.902 2.902.0 010-4.107 2.902 2.902.0 014.108.0 2.902 2.902.0 010 4.107z" fill="#ffcc4d"/><rect x="0" y="0" width="36" height="36" fill="rgba(0, 0, 0, 0)"/></svg><svg class="dark" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1em" height="1em" style="-ms-transform:rotate(360deg);-webkit-transform:rotate(360deg);transform:rotate(360deg)" viewBox="0 0 36 36"><path fill="#ffd983" d="M16 2s0-2 2-2 2 2 2 2v2s0 2-2 2-2-2-2-2V2zm18 14s2 0 2 2-2 2-2 2h-2s-2 0-2-2 2-2 2-2h2zM4 16s2 0 2 2-2 2-2 2H2s-2 0-2-2 2-2 2-2h2zm5.121-8.707s1.414 1.414.0 2.828-2.828.0-2.828.0L4.878 8.708s-1.414-1.414.0-2.829c1.415-1.414 2.829.0 2.829.0l1.414 1.414zm21 21s1.414 1.414.0 2.828-2.828.0-2.828.0l-1.414-1.414s-1.414-1.414.0-2.828 2.828.0 2.828.0l1.414 1.414zm-.413-18.172s-1.414 1.414-2.828.0.0-2.828.0-2.828l1.414-1.414s1.414-1.414 2.828.0.0 2.828.0 2.828l-1.414 1.414zm-21 21s-1.414 1.414-2.828.0.0-2.828.0-2.828l1.414-1.414s1.414-1.414 2.828.0.0 2.828.0 2.828l-1.414 1.414zM16 32s0-2 2-2 2 2 2 2v2s0 2-2 2-2-2-2-2v-2z"/><circle fill="#ffd983" cx="18" cy="18" r="10"/><rect x="0" y="0" width="36" height="36" fill="rgba(0, 0, 0, 0)"/></svg></button></div></div></div></nav><main><div class=container><article><header class=article-header><div class=thumb><div><h1>Linux Kernel 实践(一)：Hello LKM</h1><div class=post-meta><div>By WingLim | <time>March 06, 2020</time>
-| 3 minutes</div><div class=tags><a href=/tags/linux/>Linux</a>
-<a href=/tags/kernel/>Kernel</a>
-<a href=/tags/module/>Module</a></div></div></div></div></header></article><div class=article-post><p>实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息。</p><p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</p><h2 id=什么是内核模块><a href=#%e4%bb%80%e4%b9%88%e6%98%af%e5%86%85%e6%a0%b8%e6%a8%a1%e5%9d%97 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>什么是内核模块</h2><p>Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加载到内存中，无须重新编译内核。所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。</p><p>内核模块和一般的 C 语言程序不同，它不使用 <code>main()</code> 函数作为入口，并且有如下区别：</p><ul><li>非顺序执行：内核模块使用初始化函数来进行注册，并处理请求，初始化函数运行后就结束了。 它可以处理的请求类型在模块代码中定义。</li><li>没有自动清理：内核模块申请的所有内存，必须要在模块卸载时手动释放，否则这些内存会无法使用，直到重启，也就是说我们需要在模块的卸载函数（也就是下文写到的退出函数）中，将使用的内存逐一释放。</li><li>会被中断：内核模块可能会同时被多个程序/进程使用，构建内核模块时要确保发生中断时行为一致和正确。想了解更多请看：<a href=https://www.cnblogs.com/linfeng-learning/p/9512866.html>Linux 内核的中断机制</a></li><li>更高级的执行特权：通常分配给内核模块的CPU周期比分配给用户空间程序的要多。编写内核模块时要小心，以免模块对系统的整体性能产生负面影响。</li><li>不支持浮点：在Linux内核里无法直接进行浮点计算，因为这样做可以省去在用户态与内核态之间进行切换时保存/恢复浮点寄存器 FPU的操作。</li></ul><h2 id=构建前的准备><a href=#%e6%9e%84%e5%bb%ba%e5%89%8d%e7%9a%84%e5%87%86%e5%a4%87 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>构建前的准备</h2><p>通过包管理安装 Linux 内核头文件</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>$ sudo apt update
-$ apt-cache search linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
-$ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
-</code></pre></div><h2 id=开始写代码><a href=#%e5%bc%80%e5%a7%8b%e5%86%99%e4%bb%a3%e7%a0%81 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>开始写代码</h2><h3 id=引入头文件><a href=#%e5%bc%95%e5%85%a5%e5%a4%b4%e6%96%87%e4%bb%b6 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>引入头文件</h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt; // 用于标记函数的宏</span><span class=cp>
+<!doctype html><html lang=zh-cn>
+<head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="shortcut icon" type=image/png href=/favicon.png>
+<title>Linux Kernel 实践(一)：Hello LKM | 界限</title>
+<script>(function(){let b=window.matchMedia('(prefers-color-scheme: dark)').matches===!0,c="light",a=a=>{document.documentElement.dataset.scheme=a};c=="dark"||b?a('dark'):a('light')})()</script>
+<link rel=stylesheet href=/scss/style.min.bb3ffd28977a1b831a4a4863a7de8802c193c8775866c581c61749bebe87eb35.css><script src=https://code.iconify.design/2/2.0.4/iconify.min.js></script></head>
+<body><header class=header>
+<div class=container>
+<div class=header-content>
+<a href=/ class=site-title-link><svg xmlns="http://www.w3.org/2000/svg" width="128" height="96"><path d="M24.64 67.92H16.98Q17.52 66.51 18.56 63.32 19.6 60.13 20.91 56q1.31-4.14 2.66-8.44 1.34-4.3 2.48-8.09 1.14-3.8 1.92-6.32.77-2.52.84-2.92Q28.87 29.89 29.48 29.92 30.08 29.96 30.29 29.96h6.18Q36.6 29.96 36.23 30.46 35.86 30.96 35.66 30.96H32.84Q32.1 30.96 31.33 30.96 30.55 30.96 29.88 31.03 29.41 32.58 28.5 35.43 27.6 38.29 26.49 41.88 25.38 45.48 24.2 49.31q-1.17 3.83-2.25 7.36-1.07 3.53-1.91 6.21Q19.2 65.57 18.79 66.85h6.66Q25.58 66.85 25.21 67.35 24.84 67.86 24.64 67.92z" fill="#000"/><path d="M89.35 73.84Q87.54 73.84 84.65 72.73 81.76 71.62 78.33 69.84 74.9 68.06 71.51 66.11 68.11 64.16 65.29 62.41 62.47 60.67 60.86 59.59 60.12 61.2 58.84 63.56 57.56 65.91 55.92 68.19 54.27 70.48 52.36 72.02q-1.92 1.55-4.07 1.55Q46.14 73.57 44.36 71.89 42.58 70.21 41.2 67.59 39.82 64.97 38.88 61.98 37.94 58.99 37.47 56.3 37 53.61 37 51.86 37 51.6 37.03 50.96 37.07 50.32 37.27 49.75 37.47 49.18 37.87 49.18 38.34 49.18 38.34 49.75 38.34 50.32 38.34 50.65 38.34 52.47 38.68 54.79 39.02 57.11 39.62 59.36 40.23 61.61 40.97 63.29 41.57 64.56 42.58 66.38 43.59 68.19 45 69.6q1.41 1.42 3.09 1.42 1.68.0 3.26-1.55 1.58-1.55 2.89-3.8 1.31-2.25 2.28-4.43Q57.5 59.05 58.03 57.78 56.96 57.11 55.04 55.93q-1.91-1.18-4.16-2.52-2.25-1.34-4.54-2.55-2.28-1.21-4.23-1.99Q40.16 48.1 38.95 48.1q-1.68.0-2.42 1.08Q35.79 50.25 35.79 51.86 35.79 52.8 36.06 53.75 36.33 54.69 36.33 55.63 36.33 55.76 36.26 56.23 36.19 56.7 35.86 56.7 35.52 56.7 35.22 55.8 34.92 54.89 34.78 53.88 34.65 52.87 34.65 52.54q0-1.82.57-3.46.57-1.65 1.85-2.73 1.27-1.07 3.22-1.07 1.95.0 4.51 1.11 2.55 1.11 5.24 2.75 2.69 1.65 5.04 3.33 2.35 1.68 3.96 2.82Q59.92 53.14 61.19 49.88 62.47 46.62 64.15 42.89 65.83 39.16 67.85 35.5 69.86 31.84 72.21 28.81q2.36-3.02 4.98-4.83 2.62-1.82 5.44-1.82Q84.38 22.16 85.45 23.07q1.08.91 1.61 2.45Q87.13 25.72 87.17 25.92 87.2 26.13 87.2 26.33 87.2 27.4 86.63 28.51 86.06 29.62 85.32 30.36 85.25 30.43 84.98 30.66 84.71 30.9 84.58 30.9 84.38 30.9 84.38 30.63 84.38 30.09 84.58 29.59 84.78 29.08 84.78 28.55q0-1.75-1.08-3.2Q82.63 23.91 80.75 23.91 80.28 23.91 79.77 24.04 79.27 24.18 78.8 24.38 77.25 25.12 75.71 27.13q-1.55 2.02-2.99 4.74-1.45 2.72-2.72 5.58Q68.72 40.31 67.71 42.79 66.7 45.28 66.1 46.82q-1.08 2.62-2.08 5.25-1.01 2.62-2.16 5.24Q65.16 59.66 69.22 62.48 73.29 65.3 77.59 67.62 81.89 69.94 85.86 70.88 86.66 71.08 87.54 71.08 88.21 71.08 88.64 70.81 89.08 70.55 89.08 69.81 89.08 69 88.68 68.06 88.27 67.12 87.84 66.35 87.4 65.57 87.4 65.44 87.4 65.17 87.6 65.17 87.94 65.17 88.54 66.01 89.15 66.85 89.82 68.06 90.49 69.27 90.93 70.41 91.37 71.55 91.37 72.16 91.37 73.03 90.79 73.44 90.22 73.84 89.35 73.84z" fill="#000"/><path d="M108.46 67.92H100.4V67.86Q100.4 67.72 100.73 67.29 101.07 66.85 101.27 66.85h6.12Q107.79 65.57 108.66 62.88 109.54 60.2 110.68 56.67 111.82 53.14 113.06 49.31 114.31 45.48 115.48 41.88 116.66 38.29 117.57 35.43 118.47 32.58 118.94 31.03 118.27 30.96 117.47 30.96 116.66 30.96 115.79 30.96H112.7Q112.56 30.96 112.96 30.46 113.37 29.96 113.57 29.96h6.25Q120.62 29.96 120.56 30.23 120.36 30.63 119.52 33.15 118.68 35.67 117.43 39.47 116.19 43.26 114.81 47.56q-1.38 4.3-2.69 8.44-1.31 4.13-2.28 7.32Q108.86 66.51 108.46 67.92z" fill="#000"/></svg>
+<h2>界限</h2>
+</a>
+<nav class=navigation>
+<ul>
+<li>
+<a class=nav-link href=/archives>
+<span class=iconify data-icon=fluent:archive-multiple-24-regular data-width=24 data-height=24></span>
+Archives
+</a>
+</li>
+<li>
+<a class=nav-link href=/feed.xml>
+<span class=iconify data-icon=fluent:rss-24-regular data-width=24 data-height=24></span>
+Feed
+</a>
+</li>
+</ul>
+</nav>
+<div class=actions>
+<div class=nav-toggle>
+<div class=line></div>
+<div class=line></div>
+<div class=line></div>
+</div>
+</div>
+</div>
+</div>
+</header><main class=page-content>
+<div class="post-intro wrapper">
+<h1 class=title>
+Linux Kernel 实践(一)：Hello LKM
+</h1>
+<p class=description>实现一个简单的 Linux Kernel Module 并通过自定义参数输出信息</p>
+<div class=meta>
+<div class="item date">
+<span class=label>Published on</span>
+<span class=value>March 06, 2020</span>
+</div>
+<div class=item>
+<span class=label>Reading time</span>
+<span class=value>3 minutes</span>
+</div>
+<div class=item>
+<span class=label>Tags</span>
+<span class=value>
+<a href=/tags/linux/>#Linux</a>
+<a href=/tags/kernel/>#Kernel</a>
+<a href=/tags/module/>#Module</a>
+</span>
+</div>
+</div>
+</div>
+<div class="wrapper contents">
+<div class=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#什么是内核模块>什么是内核模块</a></li>
+<li><a href=#构建前的准备>构建前的准备</a></li>
+<li><a href=#开始写代码>开始写代码</a>
+<ul>
+<li><a href=#引入头文件>引入头文件</a></li>
+<li><a href=#定义模块信息>定义模块信息</a></li>
+<li><a href=#初始化函数>初始化函数</a></li>
+<li><a href=#退出函数>退出函数</a></li>
+<li><a href=#初始化退出模块>初始化&退出模块</a></li>
+<li><a href=#汇总>汇总</a></li>
+</ul>
+</li>
+<li><a href=#编译>编译</a></li>
+<li><a href=#测试模块>测试模块</a>
+<ul>
+<li><a href=#查看模块信息>查看模块信息</a></li>
+<li><a href=#加载模块>加载模块</a></li>
+<li><a href=#卸载模块>卸载模块</a></li>
+<li><a href=#查看-printk-输出信息>查看 printk() 输出信息</a></li>
+</ul>
+</li>
+<li><a href=#自定义参数>自定义参数</a>
+<ul>
+<li><a href=#解析>解析</a>
+<ul>
+<li><a href=#static-char-name--lkm>static char *name = &ldquo;LKM&rdquo;;</a></li>
+<li><a href=#module_paramname-type-permissions>module_param(name, type, permissions)</a></li>
+<li><a href=#module_parm_desc>MODULE_PARM_DESC</a></li>
+</ul>
+</li>
+<li><a href=#调用>调用</a></li>
+</ul>
+</li>
+<li><a href=#参考>参考</a></li>
+</ul>
+</nav>
+</div>
+<div class=post-content>
+<p>使用系统为 Ubuntu，内核版本为 4.4.0-93-generic</p>
+<h2 id=什么是内核模块>什么是内核模块</h2>
+<p>Loadable Kernel Modules（LKM）即可加载内核模块，LKM可以动态地加载到内存中，无须重新编译内核。所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。</p>
+<p>内核模块和一般的 C 语言程序不同，它不使用 <code>main()</code> 函数作为入口，并且有如下区别：</p>
+<ul>
+<li>非顺序执行：内核模块使用初始化函数来进行注册，并处理请求，初始化函数运行后就结束了。 它可以处理的请求类型在模块代码中定义。</li>
+<li>没有自动清理：内核模块申请的所有内存，必须要在模块卸载时手动释放，否则这些内存会无法使用，直到重启，也就是说我们需要在模块的卸载函数（也就是下文写到的退出函数）中，将使用的内存逐一释放。</li>
+<li>会被中断：内核模块可能会同时被多个程序/进程使用，构建内核模块时要确保发生中断时行为一致和正确。想了解更多请看：<a href=https://www.cnblogs.com/linfeng-learning/p/9512866.html>Linux 内核的中断机制</a></li>
+<li>更高级的执行特权：通常分配给内核模块的CPU周期比分配给用户空间程序的要多。编写内核模块时要小心，以免模块对系统的整体性能产生负面影响。</li>
+<li>不支持浮点：在Linux内核里无法直接进行浮点计算，因为这样做可以省去在用户态与内核态之间进行切换时保存/恢复浮点寄存器 FPU的操作。</li>
+</ul>
+<h2 id=构建前的准备>构建前的准备</h2>
+<p>通过包管理安装 Linux 内核头文件</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell>sudo apt update
+apt-cache search linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
+apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span>
+</code></pre></div><h2 id=开始写代码>开始写代码</h2>
+<h3 id=引入头文件>引入头文件</h3>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt; // 用于标记函数的宏</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt; //加载内核模块到内核使用的核心头文件</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt; // 包含内核使用的类型、宏和函数</span><span class=cp>
-</span></code></pre></div><h3 id=定义模块信息><a href=#%e5%ae%9a%e4%b9%89%e6%a8%a1%e5%9d%97%e4%bf%a1%e6%81%af class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>定义模块信息</h3><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>              <span class=c1>// 许可类型，它会影响到运行时行为 
+</span></code></pre></div><h3 id=定义模块信息>定义模块信息</h3>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=n>MODULE_LICENSE</span><span class=p>(</span><span class=s>&#34;GPL&#34;</span><span class=p>);</span>              <span class=c1>// 许可类型，它会影响到运行时行为 
 </span><span class=c1></span><span class=n>MODULE_AUTHOR</span><span class=p>(</span><span class=s>&#34;WingLim&#34;</span><span class=p>);</span>      <span class=c1>// 作者，当使用 modinfo 命令时可见 
 </span><span class=c1></span><span class=n>MODULE_DESCRIPTION</span><span class=p>(</span><span class=s>&#34;A simple Linux driver to say hello.&#34;</span><span class=p>);</span>  <span class=c1>// 模块描述，参见 modinfo 命令 
 </span><span class=c1></span><span class=n>MODULE_VERSION</span><span class=p>(</span><span class=s>&#34;0.1&#34;</span><span class=p>);</span>              <span class=c1>// 模块版本 
-</span></code></pre></div><p>如果没有定义 <code>MODULE_LICENSE</code> ，在编译和加载模块时会报 <code>WARNING: modpost: missing MODULE_LICENSE()</code></p><p><code>MODULE_LICENSE</code> 可以选用 “GPL”，“GPL v2”，“GPL and additional rights”，“Dual BSD/GPL”，“Dual MPL/GPL”，“Proprietary” 这几个许可证。更多说明请看：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L209>linux/module.h#L209</a></p><h3 id=初始化函数><a href=#%e5%88%9d%e5%a7%8b%e5%8c%96%e5%87%bd%e6%95%b0 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>初始化函数</h3><p><code>static</code> 限制这个函数的可见范围为当前 C 文件</p><p><code>__init</code> 表示该函数仅在初始化阶段使用，之后释放使用的内存资源：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/init.h#L7>init.h#L7</a></p><p><code>@return</code> 执行成功返回 0</p><p>在内核中我们使用 <code>printk()</code> 来打印信息.。<code>printk()</code> 和 <code>printf()</code> 语法一样，但需要先定义消息类型。可用的消息类型可以到 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/kern_levels.h#L7>linux/kern_levels.h#L7-#L23</a> 查看</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>int</span> <span class=n>__init</span> <span class=nf>helloModule_init</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
+</span></code></pre></div><p>如果没有定义 <code>MODULE_LICENSE</code> ，在编译和加载模块时会报 <code>WARNING: modpost: missing MODULE_LICENSE()</code></p>
+<p><code>MODULE_LICENSE</code> 可以选用 “GPL”，“GPL v2”，“GPL and additional rights”，“Dual BSD/GPL”，“Dual MPL/GPL”，“Proprietary” 这几个许可证。更多说明请看：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L209>linux/module.h#L209</a></p>
+<h3 id=初始化函数>初始化函数</h3>
+<p><code>static</code> 限制这个函数的可见范围为当前 C 文件</p>
+<p><code>__init</code> 表示该函数仅在初始化阶段使用，之后释放使用的内存资源：<a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/init.h#L7>init.h#L7</a></p>
+<p><code>@return</code> 执行成功返回 0</p>
+<p>在内核中我们使用 <code>printk()</code> 来打印信息.。<code>printk()</code> 和 <code>printf()</code> 语法一样，但需要先定义消息类型。可用的消息类型可以到 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/kern_levels.h#L7>linux/kern_levels.h#L7-#L23</a> 查看</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>int</span> <span class=n>__init</span> <span class=nf>helloModule_init</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
    <span class=n>printk</span><span class=p>(</span><span class=n>KERN_INFO</span> <span class=s>&#34;Hello LKM!</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></div><h3 id=退出函数><a href=#%e9%80%80%e5%87%ba%e5%87%bd%e6%95%b0 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>退出函数</h3><p><code>__exit</code> 表示如果这个代码用于一个内置的驱动程序(而不是LKM)，则不需要这个函数。</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>void</span> <span class=n>__exit</span> <span class=nf>helloModule_exit</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
+</code></pre></div><h3 id=退出函数>退出函数</h3>
+<p><code>__exit</code> 表示如果这个代码用于一个内置的驱动程序(而不是LKM)，则不需要这个函数。</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=k>static</span> <span class=kt>void</span> <span class=n>__exit</span> <span class=nf>helloModule_exit</span><span class=p>(</span><span class=kt>void</span><span class=p>){</span>
    <span class=n>printk</span><span class=p>(</span><span class=n>KERN_INFO</span> <span class=s>&#34;Goodbye LKM!</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>);</span>
 <span class=p>}</span>
-</code></pre></div><h3 id=初始化退出模块><a href=#%e5%88%9d%e5%a7%8b%e5%8c%96%e9%80%80%e5%87%ba%e6%a8%a1%e5%9d%97 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>初始化&amp;amp;退出模块</h3><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L75>linux/module.h#L75-#L98</a></p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
+</code></pre></div><h3 id=初始化退出模块>初始化&退出模块</h3>
+<p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/module.h#L75>linux/module.h#L75-#L98</a></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
 <span class=n>module_exit</span><span class=p>(</span><span class=n>helloModule_exit</span><span class=p>);</span>
-</code></pre></div><h4 id=汇总><a href=#%e6%b1%87%e6%80%bb class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>汇总</h4><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
+</code></pre></div><h3 id=汇总>汇总</h3>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
 <span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
@@ -43,16 +171,19 @@ $ apt install linux-headers-<span class=k>$(</span>uname -r<span class=k>)</span
 
 <span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
 <span class=n>module_exit</span><span class=p>(</span><span class=n>helloModule_exit</span><span class=p>);</span>
-</code></pre></div><h2 id=编译><a href=#%e7%bc%96%e8%af%91 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>编译</h2><p>添加 <code>Makefile</code></p><div class=highlight><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>obj-m</span><span class=o>+=</span>hello.o
+</code></pre></div><h2 id=编译>编译</h2>
+<p>添加 <code>Makefile</code></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-makefile data-lang=makefile><span class=nv>obj-m</span><span class=o>+=</span>hello.o
 <span class=nv>KDIR</span> <span class=o>=</span> /lib/modules/<span class=k>$(</span>shell uname -r<span class=k>)</span>/build
 
 <span class=nf>all</span><span class=o>:</span>
     make -C <span class=k>$(</span>KDIR<span class=k>)</span> <span class=nv>M</span><span class=o>=</span><span class=k>$(</span>PWD<span class=k>)</span> modules
 <span class=nf>clean</span><span class=o>:</span>
     make -C <span class=k>$(</span>KDIR<span class=k>)</span> <span class=nv>M</span><span class=o>=</span><span class=k>$(</span>PWD<span class=k>)</span> clean
-</code></pre></div><p>注意：<code>Makefile</code> 的基本语法如下，如果缩进不是 <code>&lt;TAB></code> 的话，会报错。</p><pre><code>&lt;target&gt;: [ &lt;dependency &gt; ]*
-       [ &lt;TAB&gt; &lt;command&gt; &lt;endl&gt; ]+
-</code></pre><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 查看当前文件</span>
+</code></pre></div><p>注意：<code>Makefile</code> 的基本语法如下，如果缩进不是 <code>&lt;TAB></code> 的话，会报错。</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-makefile data-lang=makefile><span class=nf>&lt;target&gt;</span><span class=o>:</span> [ &lt;<span class=n>dependency</span> &gt; ]*
+       <span class=o>[</span> &lt;TAB&gt; &lt;command&gt; &lt;endl&gt; <span class=o>]</span>+
+</code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=c1># 查看当前文件</span>
 root@0xDayServer:~/dev/kernel/hello# ls -l
 total <span class=m>8</span>
 -rw-r--r-- <span class=m>1</span> root root <span class=m>466</span> Mar  <span class=m>6</span> 22:53 hello.c
@@ -72,7 +203,9 @@ make<span class=o>[</span>1<span class=o>]</span>: Entering directory <span clas
 <span class=c1># 编译后生成的模块文件</span>
 root@0xDayServer:~/dev/kernel/hello# ls
 hello.c  hello.ko  hello.mod.c  hello.mod.o  hello.o  Makefile  modules.order  Module.symvers
-</code></pre></div><h2 id=测试模块><a href=#%e6%b5%8b%e8%af%95%e6%a8%a1%e5%9d%97 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>测试模块</h2><h3 id=查看模块信息><a href=#%e6%9f%a5%e7%9c%8b%e6%a8%a1%e5%9d%97%e4%bf%a1%e6%81%af class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>查看模块信息</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# modinfo hello.ko
+</code></pre></div><h2 id=测试模块>测试模块</h2>
+<h3 id=查看模块信息>查看模块信息</h3>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# modinfo hello.ko
 filename:       /root/dev/kernel/hello/hello.ko
 version:        0.1
 description:    A simple Linux driver to say hello.
@@ -81,18 +214,31 @@ license:        GPL
 srcversion:     093C7851C912088AEE5F77C
 depends:        
 vermagic:       4.4.0-93-generic SMP mod_unload modversions
-</code></pre></div><h3 id=加载模块><a href=#%e5%8a%a0%e8%bd%bd%e6%a8%a1%e5%9d%97 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>加载模块</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko
+</code></pre></div><h3 id=加载模块>加载模块</h3>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko
 root@0xDayServer:~/dev/kernel/hello# lsmod
 Module                  Size  Used by
 hello                  <span class=m>16384</span>  <span class=m>0</span> 
-</code></pre></div><h3 id=卸载模块><a href=#%e5%8d%b8%e8%bd%bd%e6%a8%a1%e5%9d%97 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>卸载模块</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# rmmod hello
-</code></pre></div><h3 id=查看-printk-输出信息><a href=#%e6%9f%a5%e7%9c%8b-printk-%e8%be%93%e5%87%ba%e4%bf%a1%e6%81%af class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>查看 printk() 输出信息</h3><ol><li>使用 <code>dmesg</code> 命令</li></ol><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# dmesg
+</code></pre></div><h3 id=卸载模块>卸载模块</h3>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# rmmod hello
+</code></pre></div><h3 id=查看-printk-输出信息>查看 printk() 输出信息</h3>
+<ol>
+<li>
+<p>使用 <code>dmesg</code> 命令</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# dmesg
 <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
 <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
-</code></pre></div><ol start=2><li>查看内核日志</li></ol><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
+</code></pre></div></li>
+<li>
+<p>查看内核日志</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# tail /var/log/kern.log
 Mar  <span class=m>6</span> 22:58:16 0xDayServer kernel: <span class=o>[</span>100339.744628<span class=o>]</span> Hello LKM!
 Mar  <span class=m>6</span> 22:59:49 0xDayServer kernel: <span class=o>[</span>100432.211044<span class=o>]</span> Goodbye LKM!
-</code></pre></div><h2 id=自定义参数><a href=#%e8%87%aa%e5%ae%9a%e4%b9%89%e5%8f%82%e6%95%b0 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>自定义参数</h2><p>将 <code>hello.c</code> 修改如下</p><div class=highlight><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
+</code></pre></div></li>
+</ol>
+<h2 id=自定义参数>自定义参数</h2>
+<p>将 <code>hello.c</code> 修改如下</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=cm>/*hello.c*/</span>
 <span class=cp>#include</span> <span class=cpf>&lt;linux/init.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/module.h&gt;</span><span class=cp>
 </span><span class=cp>#include</span> <span class=cpf>&lt;linux/kernel.h&gt;</span><span class=cp>
@@ -117,8 +263,43 @@ Mar  <span class=m>6</span> 22:59:49 0xDayServer kernel: <span class=o>[</span>1
 
 <span class=n>module_init</span><span class=p>(</span><span class=n>helloModule_init</span><span class=p>);</span>
 <span class=n>module_exit</span><span class=p>(</span><span class=n>helloModule_exit</span><span class=p>);</span>
-</code></pre></div><h3 id=解析><a href=#%e8%a7%a3%e6%9e%90 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>解析</h3><h4 id=static-char-name--lkm><a href=#static-char-name--lkm class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>&lt;code>static char *name = &amp;quot;LKM&amp;quot;;&lt;/code></h4><p>声明了一个全局静态字符指针变量 <code>name</code>，默认值为<code>"LKM"</code></p><p>在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 <code>static</code> 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。</p><h4 id=module_paramname-type-permissions><a href=#module_paramname-type-permissions class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>&lt;code>module_param(name, type, permissions)&lt;/code></h4><p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125>linux/moduleparam.h#L125</a></p><p><code>name</code> 名字：向用户显示的参数名称和模块中的变量名称</p><p><code>type</code> 参数类型：byte, short, ushort, int, uint, long, ulong, charp, bool, invbool</p><p><code>permissions</code> 权限：值为 <code>0</code> 时，禁用该项，<code>0444</code> 所有人可读，<code>0644</code> root用户可写，这里的写法和文件权限一致。</p><h4 id=module_parm_desc><a href=#module_parm_desc class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>MODULE_PARM_DESC</h4><p>参数描述，会显示在 <code>modinfo</code> 中</p><h3 id=调用><a href=#%e8%b0%83%e7%94%a8 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>调用</h3><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko <span class=nv>name</span><span class=o>=</span>World
+</code></pre></div><h3 id=解析>解析</h3>
+<h4 id=static-char-name--lkm>static char *name = &ldquo;LKM&rdquo;;</h4>
+<p>声明了一个全局静态字符指针变量 <code>name</code>，默认值为<code>"LKM"</code></p>
+<p>在内核模块中应该尽量避免使用全局变量，因为全局变量会被整个内核共享。所以应该使用 <code>static</code> 来限制变量在模块中的作用域，如果一定要使用全局变量的话，最好给这个变量加上前缀，以确保它在内核中是唯一的。</p>
+<h4 id=module_paramname-type-permissions>module_param(name, type, permissions)</h4>
+<p>定义在 <a href=https://elixir.bootlin.com/linux/v4.4/source/include/linux/moduleparam.h#L125>linux/moduleparam.h#L125</a></p>
+<p><code>name</code> 名字：向用户显示的参数名称和模块中的变量名称</p>
+<p><code>type</code> 参数类型：byte, short, ushort, int, uint, long, ulong, charp, bool, invbool</p>
+<p><code>permissions</code> 权限：值为 <code>0</code> 时，禁用该项，<code>0444</code> 所有人可读，<code>0644</code> root用户可写，这里的写法和文件权限一致。</p>
+<h4 id=module_parm_desc>MODULE_PARM_DESC</h4>
+<p>参数描述，会显示在 <code>modinfo</code> 中</p>
+<h3 id=调用>调用</h3>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>root@0xDayServer:~/dev/kernel/hello# insmod hello.ko <span class=nv>name</span><span class=o>=</span>World
 root@0xDayServer:~/dev/kernel/hello# dmesg
 <span class=o>[</span>103386.179203<span class=o>]</span> Hello World!
-</code></pre></div><h2 id=参考><a href=#%e5%8f%82%e8%80%83 class=anchor><svg class="icon" aria-hidden="true" focusable="false" height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5.0-3-1.69-3-3.5S2.55 3 4 3h4c1.45.0 3 1.69 3 3.5.0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98.0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98.0-2-1.22-2-2.5.0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45.0 3-1.69 3-3.5S14.5 6 13 6z"/></svg></a>参考</h2><ul><li><a href=http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/>Writing a Linux Kernel Module — Part 1: Introduction</a></li><li><a href=http://abcdxyzk.github.io/blog/2018/01/08/kernel-fpu-1/>linux 下的浮点运算</a></li><li><a href=https://book.douban.com/subject/1493443/>Linux Device Drivers : 3rd Edition</a></li></ul></div></div><div class=container><nav class="flex container suggested"><a rel=next href=/post/linux-kernel-practice-hijack-syscall/ title="Next post (newer)"><span>Next</span>
-Linux Kernel 实践(二)：劫持系统调用</a></nav></div><div class=container><div id=cusdis_thread data-host=https://cusdis.com data-app-id=e765a45d-5232-447f-95f8-5c32808e4444 data-page-id=40690dadbdcd432ec37d350270661610 data-page-url=/post/linux-kernel-practice-hello/ data-page-title="Linux Kernel 实践(一)：Hello LKM"></div><script async defer src=https://cusdis.com/js/cusdis.es.js></script><script>function setCusdisTheme(a){let b=document.querySelector('#cusdis_thread iframe');b&&window.CUSDIS.setTheme(a)}window.addEventListener('onColorSchemeChange',a=>{setCusdisTheme(a.detail)})</script></div></main></main><footer class="footer flex"><section class=container><nav class=footer-links><a href=/index.xml>RSS</a></nav><a href=https://beian.miit.gov.cn/>粤ICP备19070293号</a></section><script defer src=/ts/features.c81551cd4dbef120af278f16966a41142c02be9ff5d6a669be09820fbf047456.js data-enable-footnotes=true></script></footer></body></html>
+</code></pre></div><h2 id=参考>参考</h2>
+<ul>
+<li><a href=http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/>Writing a Linux Kernel Module — Part 1: Introduction</a></li>
+<li><a href=http://abcdxyzk.github.io/blog/2018/01/08/kernel-fpu-1/>linux 下的浮点运算</a></li>
+<li><a href=https://book.douban.com/subject/1493443/>Linux Device Drivers : 3rd Edition</a></li>
+</ul>
+</div>
+</div>
+<div class="wrapper comments">
+<div id=cusdis_thread data-host=https://cusdis.limxw.com data-app-id=d5c63066-e952-4a1d-8844-0a9f9796d97d data-page-id=40690dadbdcd432ec37d350270661610 data-page-url=/post/linux-kernel-practice-hello/ data-page-title="Linux Kernel 实践(一)：Hello LKM"></div>
+<script async defer src=https://cusdis.com/js/cusdis.es.js></script>
+<script>let setCusdisTheme=a=>{let b=document.querySelector('#cusdis_thread iframe');b&&window.CUSDIS.setTheme(a)};window.addEventListener('onColorSchemeChange',a=>{setCusdisTheme(a.detail)})</script>
+</div>
+</main><footer class=footer>
+<div class=footer-rows>
+<section class=copyright>
+&copy; 2021 界限
+</section>
+<section class=powerby>
+Power by
+<a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a>
+</section>
+</div>
+</footer><script type=text/javascript src=/ts/script.1c15bdefa85c8a980dac48a434c900be848ee65e6c11baaa7d4880b09b6083cc.js defer></script></body>
+</html>
