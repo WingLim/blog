@@ -18,9 +18,11 @@ menu:
   header:
     - name: Archives
       weight: 10
+      pre: <span class="iconify" data-icon="fluent:archive-multiple-24-regular" data-width="24" data-height="24"></span>
       url: "/archives"
     - name: Feed
       weight: 30
+      pre: <span class="iconify" data-icon="fluent:rss-24-regular" data-width="24" data-height="24"></span>
       url: "/feed.xml"
 
 markup:
