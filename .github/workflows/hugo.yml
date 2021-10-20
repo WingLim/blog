@@ -11,7 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-           submodules: 'recursive'
+            token: ${{ secrets.GITHUB_TOKEN }}
+            submodules: 'recursive'
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
