@@ -11,8 +11,8 @@ params:
     provider: cusdis
 
     cusdis:
-        host:
-        id: e765a45d-5232-447f-95f8-5c32808e4444
+        host: https://cusdis.limxw.com
+        id: d5c63066-e952-4a1d-8844-0a9f9796d97d
 
 menu:
   header:
