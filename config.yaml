@@ -5,7 +5,9 @@ paginate: 5
 baseURL: https://blog.limx.dev
 
 params:
-  logo: true
+  logo: 
+    enabled: true
+    showTitle: false
 
   comments:
     enabled: true
