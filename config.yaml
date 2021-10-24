@@ -5,6 +5,8 @@ paginate: 5
 baseURL: https://blog.limx.dev
 
 params:
+  description: 我见、我闻、我写
+
   logo: 
     enabled: true
     showTitle: false
