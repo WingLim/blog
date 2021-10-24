@@ -19,6 +19,7 @@ name:buildon:push:branches:[main ]paths-ignore:- &amp;#34;README.md&amp;#34;jobs
 <meta property="og:url" content="https://blog.limx.dev/post/build-docker-image-in-multi-archs-with-github-actions/">
 <meta property="og:site_name" content="界限">
 <meta property="og:type" content="article"><meta property="og:locale" content="zh-cn"><meta property="article:section" content="Post"><meta property="article:tag" content="GitHub Actions"><meta property="article:tag" content="Docker Image"><meta property="article:published_time" content="2021-04-17T15:00:52+08:00"><meta property="article:modified_time" content="2021-04-17T15:00:52+08:00">
+<meta name=twitter:card content="summary">
 <meta name=twitter:title content="使用 GiHub Actions 构建多架构 Docker 镜像 | 界限">
 <meta name=twitter:description content="Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。
 但仍存在一个问题，如果你直接使用 docker build ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 Dockerfile 拉到虚拟机中进行构建，但这会花费很多时间。
