@@ -4,7 +4,7 @@
 <link rel="shortcut icon" type=image/png href=/favicon.png>
 <title>使用 GiHub Actions 构建多架构 Docker 镜像 | 界限</title>
 <script>(function(){let b=window.matchMedia('(prefers-color-scheme: dark)').matches===!0,c="light",a=a=>{document.documentElement.dataset.scheme=a};c=="dark"||b?a('dark'):a('light')})()</script>
-<link rel=stylesheet href=/scss/style.min.6e0bd5e8b41630b3f88ff19aaa07cf140a43c6ae812260c2cd9c0eb8a4abadc2.css><script src=https://code.iconify.design/2/2.0.4/iconify.min.js></script>
+<link rel=stylesheet href=/scss/style.min.effe166add47b51a95ebe27f0179589aab848bd225b098f9d66f8db2e5c8d115.css><script src=https://code.iconify.design/2/2.0.4/iconify.min.js></script>
 <meta property="og:title" content="使用 GiHub Actions 构建多架构 Docker 镜像 | 界限">
 <meta property="og:description" content="Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。
 但仍存在一个问题，如果你直接使用 docker build ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 Dockerfile 拉到虚拟机中进行构建，但这会花费很多时间。
@@ -19,8 +19,7 @@ name:buildon:push:branches:[main ]paths-ignore:- &amp;#34;README.md&amp;#34;jobs
 <meta property="og:url" content="https://blog.limx.dev/post/build-docker-image-in-multi-archs-with-github-actions/">
 <meta property="og:site_name" content="界限">
 <meta property="og:type" content="article"><meta property="og:locale" content="zh-cn"><meta property="article:section" content="Post"><meta property="article:tag" content="GitHub Actions"><meta property="article:tag" content="Docker Image"><meta property="article:published_time" content="2021-04-17T15:00:52+08:00"><meta property="article:modified_time" content="2021-04-17T15:00:52+08:00">
-<meta name=twitter:card content="summary">
-<meta name=twitter:title content="使用 GiHub Actions 构建多架构 Docker 镜像 | 界限">
+<meta name=twitter:card content="summary"><meta name=twitter:title content="使用 GiHub Actions 构建多架构 Docker 镜像 | 界限">
 <meta name=twitter:description content="Docker为我们提供了一个一键式部署代码环境的方式，透过Docker Image我们可以不关心当前的操作系统的环境，只需要拉取镜像下来即可获得一致的运行环境。
 但仍存在一个问题，如果你直接使用 docker build ，构建出来的镜像是基于你当前机器的CPU架构。当然，你也可以将代码和 Dockerfile 拉到虚拟机中进行构建，但这会花费很多时间。
 通过 GitHub Actions，我们可以在 push 代码的时候，自动进行多架构的镜像构建，不再需要手动构建并推送到 Docker Hub 等镜像仓库中。
