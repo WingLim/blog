@@ -10,7 +10,7 @@
 <meta property="og:description" content="我见、我闻、我写">
 <meta property="og:url" content="https://blog.limx.dev/">
 <meta property="og:site_name" content="界限">
-<meta property="og:type" content="website"><meta property="og:locale" content="zh-cn"><meta property="og:updated_time" content=" 2021-05-08T18:35:53+08:00 ">
+<meta property="og:type" content="website"><meta property="og:locale" content="zh-cn"><meta property="og:updated_time" content=" 2021-10-25T14:47:30+08:00 ">
 <meta name=twitter:card content="summary"><meta name=twitter:title content="界限">
 <meta name=twitter:description content="我见、我闻、我写">
 </head>
@@ -48,22 +48,27 @@ Feed
 <div class=page-container>
 <div class="post-intro hero">
 <h1 class=title>
-<a href=/post/caddy-hugo-github-actions-for-blog/ class=title-link>Caddy2 + Hugo + Github Actions 的自动化部署博客方案</a>
+<a href=/post/build-telegram-bot-in-vercel-with-go/ class=title-link>使用 Go 在 Vercel 上部署 Telegram Bot</a>
 </h1>
-<p class=description>解放你部署博客的双手</p>
+<p class=description>是机器人！</p>
 <div class=summary>
-<p>我的博客部署流程如下：</p>
-<ol>
-<li>写文章并推送到 <code>username.github.io</code> 仓库的 <code>hugo</code> 分支。</li>
-<li>GitHub Actions 自动构建并推送到 <code>main</code> 分支。</li>
-<li>GitHub 发送 webhook 请求到自有服务器，服务器拉取更新。</li>
-</ol>
-<p>不使用 GitHub Page 的原因主要是在国内访问太慢，而且有服务器闲置，正好用来部署博客。</p>
-<p>而使用 GitHub Actions …</p>
+<p>Telegram Bot 提供了另一种交互方式，而且可以通过 Webhook 的方式将 Bot 后端部署在 Vercel 的 Serverless Function 上，来实现一个 Maintenance-free 的服务。</p>
+<p>这里以 <a href=https://github.com/WingLim/ddns-telegram-bot>ddns-telegram-bot</a> 为例，这是一个通知用户 DDNS 变动的机器人。</p>
+<h2 id=创建并设置-bot>创建并设置 Bot</h2>
+<p>创建机器人十分简单， …</p>
 </div>
-<a href=/post/caddy-hugo-github-actions-for-blog/ class=readmore>Continue reading</a>
+<a href=/post/build-telegram-bot-in-vercel-with-go/ class=readmore>Continue reading</a>
 </div>
 <div class=blog-list>
+<a href=/post/caddy-hugo-github-actions-for-blog/ class=post-item>
+<div class="post-intro solo">
+<span class=date>May 08, 2021</span>
+<h1 class=title>
+Caddy2 + Hugo + Github Actions 的自动化部署博客方案
+</h1>
+<p class=description>解放你部署博客的双手</p>
+</div>
+</a>
 <a href=/post/build-docker-image-in-multi-archs-with-github-actions/ class=post-item>
 <div class="post-intro solo">
 <span class=date>April 17, 2021</span>
@@ -87,15 +92,6 @@ Feed
 <h1 class=title>
 C语言项目单元测试实践
 </h1>
-</div>
-</a>
-<a href=/post/linux-kernel-practice-hijack-syscall/ class=post-item>
-<div class="post-intro solo">
-<span class=date>March 06, 2020</span>
-<h1 class=title>
-Linux Kernel 实践(二)：劫持系统调用
-</h1>
-<p class=description>通过劫持系统调用表，将原有系统调用替换成自定义系统调用</p>
 </div>
 </a>
 </div>
