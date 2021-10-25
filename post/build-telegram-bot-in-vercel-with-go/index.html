@@ -111,9 +111,9 @@ go get -u github.com/go-telegram-bot-api/telegram-bot-api
 </code></pre></div><h2 id=创建-serverless-function>创建 Serverless Function</h2>
 <p>使用 Go Runtime 时，Serverless Function 要在 <code>api</code> 目录下，文件名即对应路径</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>mkdir api
-<span class=c1># 路径为 /api/go</span>
+<span class=c1># 路径为 https://your-subdomain.vercel.app/api/go</span>
 touch api/bot.go
-</code></pre></div><p>在 <code>bot.go</code> 中，需要定义为 <code>handler</code> 包，并且需要包含符合 <code>HandlerFunc</code> 签名的导出函数</p>
+</code></pre></div><p>在 <code>bot.go</code> 中，需要定义为 <code>handler</code> 包，并且需要包含符合 <a href=https://pkg.go.dev/net/http#HandlerFunc><code>HandlerFunc</code></a> 签名的导出函数</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>handler</span>
 
 <span class=kn>import</span> <span class=p>(</span>

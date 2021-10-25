@@ -26,9 +26,9 @@ go get -u github.com/go-telegram-bot-api/telegram-bot-api
 &lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="创建-serverless-function">创建 Serverless Function&lt;/h2>
 &lt;p>使用 Go Runtime 时，Serverless Function 要在 &lt;code>api&lt;/code> 目录下，文件名即对应路径&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">mkdir api
-&lt;span class="c1"># 路径为 /api/go&lt;/span>
+&lt;span class="c1"># 路径为 https://your-subdomain.vercel.app/api/go&lt;/span>
 touch api/bot.go
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>在 &lt;code>bot.go&lt;/code> 中，需要定义为 &lt;code>handler&lt;/code> 包，并且需要包含符合 &lt;code>HandlerFunc&lt;/code> 签名的导出函数&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>在 &lt;code>bot.go&lt;/code> 中，需要定义为 &lt;code>handler&lt;/code> 包，并且需要包含符合 &lt;a href="https://pkg.go.dev/net/http#HandlerFunc">&lt;code>HandlerFunc&lt;/code>&lt;/a> 签名的导出函数&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="kn">package&lt;/span> &lt;span class="nx">handler&lt;/span>
 &lt;span class="kn">import&lt;/span> &lt;span class="p">(&lt;/span>
 &lt;span class="s">&amp;#34;fmt&amp;#34;&lt;/span>
