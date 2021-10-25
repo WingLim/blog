@@ -56,11 +56,11 @@ go get -u github.com/go-telegram-bot-api/telegram-bot-api
 
 ```bash
 mkdir api
-# 路径为 /api/go
+# 路径为 https://your-subdomain.vercel.app/api/go
 touch api/bot.go
 ```
 
-在 `bot.go` 中，需要定义为 `handler` 包，并且需要包含符合 `HandlerFunc` 签名的导出函数
+在 `bot.go` 中，需要定义为 `handler` 包，并且需要包含符合 [`HandlerFunc`](https://pkg.go.dev/net/http#HandlerFunc) 签名的导出函数
 
 ```go
 package handler
