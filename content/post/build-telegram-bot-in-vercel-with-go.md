@@ -173,7 +173,7 @@ vercel --prod
 
 打开 Bot，发送 `/start`
 
-![Chat with bot](https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/202110251453515.png)
+![Chat with bot](https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/202110251518784.png)
 
 ## 总结
 
