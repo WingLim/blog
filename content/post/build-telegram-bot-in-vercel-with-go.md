@@ -20,7 +20,7 @@ Telegram Bot 提供了另一种交互方式，而且可以通过 Webhook 的方�
 创建机器人十分简单，只需要四步
 
 1. 打开并启动 [@BotFather](https://t.me/BotFather)
-2. 发送 /newbot 命令
+2. 发送 `/newbot` 命令
 3. 输入机器人名称（相当于别名）
 4. 输入机器人用户名（相当于唯一标识符）
 
@@ -75,11 +75,17 @@ func BotHandler(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-在 Telegram Bot Webhook 模式下，用户发送信息给 Bot，Bot 会触发 Webhook，然后 Webhook 返回的响应可以直接作为 Telegram Message 发送给用户
+Telegram Bot 有两种模式：
+1. Polling
+	用户需要定期轮询，获取信息并处理
+2. Webhook
+	Bot 收到消息后向用户设置的 Webhook 发送消息
+
+在 Webhook 模式下，Webhook 返回的响应可以直接作为 [Message](https://core.telegram.org/bots/api#message) 发送给用户
 
 ![Message Communication Flow](https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/202110251452862.png)
 
-因此我们可以接收到请求并处理完后，直接返回响应
+因此我们可以接收到请求并处理完后，直接返回响应，即可在对话中返回消息
 
 ```go
 package handler
