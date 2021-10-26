@@ -11,6 +11,9 @@ params:
     enabled: true
     showTitle: false
 
+  menu:
+    useTitle: true
+
   comments:
     enabled: true
     provider: cusdis
