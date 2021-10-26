@@ -88,7 +88,7 @@ Feed
 <p>创建机器人十分简单，只需要四步</p>
 <ol>
 <li>打开并启动 <a href=https://t.me/BotFather>@BotFather</a></li>
-<li>发送 /newbot 命令</li>
+<li>发送 <code>/newbot</code> 命令</li>
 <li>输入机器人名称（相当于别名）</li>
 <li>输入机器人用户名（相当于唯一标识符）</li>
 </ol>
@@ -124,12 +124,19 @@ touch api/bot.go
 <span class=kd>func</span> <span class=nf>BotHandler</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
   <span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>&#34;&lt;h1&gt;Hello from Go!&lt;/h1&gt;&#34;</span><span class=p>)</span>
 <span class=p>}</span>
-</code></pre></div><p>在 Telegram Bot Webhook 模式下，用户发送信息给 Bot，Bot 会触发 Webhook，然后 Webhook 返回的响应可以直接作为 Telegram Message 发送给用户</p>
+</code></pre></div><p>Telegram Bot 有两种模式：</p>
+<ol>
+<li>Polling
+用户需要定期轮询，获取信息并处理</li>
+<li>Webhook
+Bot 收到消息后向用户设置的 Webhook 发送消息</li>
+</ol>
+<p>在 Webhook 模式下，Webhook 返回的响应可以直接作为 <a href=https://core.telegram.org/bots/api#message>Message</a> 发送给用户</p>
 <p><figure>
 <img src=https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/202110251452862.png loading=lazy alt="Message Communication Flow">
 <figcaption>Message Communication Flow</figcaption>
 </figure></p>
-<p>因此我们可以接收到请求并处理完后，直接返回响应</p>
+<p>因此我们可以接收到请求并处理完后，直接返回响应，即可在对话中返回消息</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>handler</span>
 
 <span class=kn>import</span> <span class=p>(</span>

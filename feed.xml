@@ -5,7 +5,7 @@
 &lt;p>创建机器人十分简单，只需要四步&lt;/p>
 &lt;ol>
 &lt;li>打开并启动 &lt;a href="https://t.me/BotFather">@BotFather&lt;/a>&lt;/li>
-&lt;li>发送 /newbot 命令&lt;/li>
+&lt;li>发送 &lt;code>/newbot&lt;/code> 命令&lt;/li>
 &lt;li>输入机器人名称（相当于别名）&lt;/li>
 &lt;li>输入机器人用户名（相当于唯一标识符）&lt;/li>
 &lt;/ol>
@@ -37,14 +37,21 @@ touch api/bot.go
 &lt;span class="kd">func&lt;/span> &lt;span class="nf">BotHandler&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">w&lt;/span> &lt;span class="nx">http&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ResponseWriter&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">r&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">http&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Request&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
 &lt;span class="nx">fmt&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Fprintf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">w&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;&amp;lt;h1&amp;gt;Hello from Go!&amp;lt;/h1&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
 &lt;span class="p">}&lt;/span>
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>在 Telegram Bot Webhook 模式下，用户发送信息给 Bot，Bot 会触发 Webhook，然后 Webhook 返回的响应可以直接作为 Telegram Message 发送给用户&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Telegram Bot 有两种模式：&lt;/p>
+&lt;ol>
+&lt;li>Polling
+用户需要定期轮询，获取信息并处理&lt;/li>
+&lt;li>Webhook
+Bot 收到消息后向用户设置的 Webhook 发送消息&lt;/li>
+&lt;/ol>
+&lt;p>在 Webhook 模式下，Webhook 返回的响应可以直接作为 &lt;a href="https://core.telegram.org/bots/api#message">Message&lt;/a> 发送给用户&lt;/p>
 &lt;p>&lt;figure>
 &lt;img src="https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/202110251452862.png"
 loading="lazy"
 alt="Message Communication Flow">
 &lt;figcaption>Message Communication Flow&lt;/figcaption>
 &lt;/figure>&lt;/p>
-&lt;p>因此我们可以接收到请求并处理完后，直接返回响应&lt;/p>
+&lt;p>因此我们可以接收到请求并处理完后，直接返回响应，即可在对话中返回消息&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="kn">package&lt;/span> &lt;span class="nx">handler&lt;/span>
 &lt;span class="kn">import&lt;/span> &lt;span class="p">(&lt;/span>
 &lt;span class="s">&amp;#34;encoding/json&amp;#34;&lt;/span>
