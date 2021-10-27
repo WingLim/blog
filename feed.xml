@@ -139,7 +139,7 @@
 &lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="效果">效果&lt;/h2>
 &lt;p>使用 &lt;code>vercel --prod&lt;/code> 部署到生产环境后，让我们来看看实际效果展示&lt;/p>
 &lt;p>&lt;figure>
-&lt;img src="https://blog.limx.dev/cusdis-bot-final-result.jpg"
+&lt;img src="https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/cusdis-bot-final-result.jpg"
 loading="lazy"
 alt="cusdis-bot">
 &lt;figcaption>cusdis-bot&lt;/figcaption>
