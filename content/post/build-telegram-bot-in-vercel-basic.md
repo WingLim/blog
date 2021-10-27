@@ -143,8 +143,6 @@ vercel --prod
 
 ![Start with bot](https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/cusdis-bot-start.jpeg)
 
-## 总结
-
 因为 Serverless Function 无状态的原因，通过 Vercel 来部署 Telegram Bot 适合一些不需要依赖上下文状态的功能，举个简单的例子，比如说汇率查询，股价查询等。
 
 但 Vercel 在逐步支持[集成第三方服务](https://vercel.com/integrations)，可以通过 [Upstash](https://vercel.com/integrations/upstash) 这个 Serverless Redis 来读写状态。
