@@ -231,7 +231,6 @@ loading="lazy"
 alt="Start with bot">
 &lt;figcaption>Start with bot&lt;/figcaption>
 &lt;/figure>&lt;/p>
-&lt;h2 id="总结">总结&lt;/h2>
 &lt;p>因为 Serverless Function 无状态的原因，通过 Vercel 来部署 Telegram Bot 适合一些不需要依赖上下文状态的功能，举个简单的例子，比如说汇率查询，股价查询等。&lt;/p>
 &lt;p>但 Vercel 在逐步支持&lt;a href="https://vercel.com/integrations">集成第三方服务&lt;/a>，可以通过 &lt;a href="https://vercel.com/integrations/upstash">Upstash&lt;/a> 这个 Serverless Redis 来读写状态。&lt;/p></description></item><item><title>Caddy2 + Hugo + Github Actions 的自动化部署博客方案</title><link>https://blog.limx.dev/post/caddy-hugo-github-actions-for-blog/</link><pubDate>Sat, 08 May 2021 18:35:53 +0800</pubDate><guid>https://blog.limx.dev/post/caddy-hugo-github-actions-for-blog/</guid><description>
 &lt;p>我的博客部署流程如下：&lt;/p>

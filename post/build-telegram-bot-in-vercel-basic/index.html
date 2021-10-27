@@ -77,7 +77,6 @@
 <li><a href=#创建-serverless-function>创建 Serverless Function</a></li>
 <li><a href=#部署并设置-webhook>部署并设置 Webhook</a></li>
 <li><a href=#结果>结果</a></li>
-<li><a href=#总结>总结</a></li>
 </ul>
 </nav>
 </div>
@@ -175,7 +174,6 @@ touch api/bot.ts
 <img src=https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/cusdis-bot-start.jpeg loading=lazy alt="Start with bot">
 <figcaption>Start with bot</figcaption>
 </figure></p>
-<h2 id=总结>总结</h2>
 <p>因为 Serverless Function 无状态的原因，通过 Vercel 来部署 Telegram Bot 适合一些不需要依赖上下文状态的功能，举个简单的例子，比如说汇率查询，股价查询等。</p>
 <p>但 Vercel 在逐步支持<a href=https://vercel.com/integrations>集成第三方服务</a>，可以通过 <a href=https://vercel.com/integrations/upstash>Upstash</a> 这个 Serverless Redis 来读写状态。</p>
 </div>
