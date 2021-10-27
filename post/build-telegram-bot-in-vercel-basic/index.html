@@ -135,8 +135,9 @@ touch api/bot.ts
 </li>
 </ol>
 <p>在 Serverless Function 中我们使用 Webhook 的方式来处理请求</p>
-<p>在根目录下创建<code>index.tx</code>，部署程序时自动设置 Webhook</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=kr>import</span> <span class=p>{</span> <span class=nx>Bot</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;grammy&#39;</span>
+<p>在根目录下创建<code>index.ts</code>，部署程序时自动设置 Webhook</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// index.ts
+</span><span class=c1></span><span class=kr>import</span> <span class=p>{</span> <span class=nx>Bot</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;grammy&#39;</span>
 
 <span class=kr>const</span> <span class=p>{</span> <span class=nx>BOT_TOKEN</span><span class=p>,</span> <span class=nx>BOT_WEBHOOK</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>process</span><span class=p>.</span><span class=nx>env</span>
 
