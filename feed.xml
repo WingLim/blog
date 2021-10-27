@@ -144,7 +144,7 @@ loading="lazy"
 alt="cusdis-bot">
 &lt;figcaption>cusdis-bot&lt;/figcaption>
 &lt;/figure>&lt;/p>
-&lt;p>你可以给自己的网站添加 &lt;a href="https://cusdis.com/">Cusdis&lt;/a> 评论服务，并设置&lt;/p></description></item><item><title>在 Vercel 上部署 Telegram Bot（一）：基本搭建</title><link>https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/</link><pubDate>Mon, 25 Oct 2021 14:47:30 +0800</pubDate><guid>https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/</guid><description>
+&lt;p>你可以给自己的网站添加 &lt;a href="https://cusdis.com/">Cusdis&lt;/a> 评论服务，并启用 &lt;a href="https://t.me/CusdisxBot">@CusdisxBot&lt;/a> 来尝试这个机器人的功能&lt;/p></description></item><item><title>在 Vercel 上部署 Telegram Bot（一）：基本搭建</title><link>https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/</link><pubDate>Mon, 25 Oct 2021 14:47:30 +0800</pubDate><guid>https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/</guid><description>
 &lt;p>Telegram Bot 提供了另一种用户与服务交互的方式，通过与 Bot 的对话，按钮等方式来简化服务的执行&lt;/p>
 &lt;p>同时我们可以通过 Webhook 的方式将 Bot 后端部署在 Vercel 的 Serverless Function 上，来实现一个 Maintenance-free 的服务&lt;/p>
 &lt;p>这里以 &lt;a href="https://github.com/WingLim/cusdsi-telegram-bot">cusdis-telegram-bot&lt;/a> 为例，这是一个通知用户评论，并且可以在 Bot 中通过或回复评论的机器人&lt;/p>
