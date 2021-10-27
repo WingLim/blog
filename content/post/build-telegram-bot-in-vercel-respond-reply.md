@@ -204,4 +204,4 @@ bot.on('msg', async (ctx) => {
 
 ![cusdis-bot](https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/cusdis-bot-final-result.jpg)
 
-你可以给自己的网站添加 [Cusdis](https://cusdis.com/) 评论服务，并设置
+你可以给自己的网站添加 [Cusdis](https://cusdis.com/) 评论服务，并启用 [@CusdisxBot](https://t.me/CusdisxBot) 来尝试这个机器人的功能
