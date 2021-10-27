@@ -202,6 +202,6 @@ bot.on('msg', async (ctx) => {
 
 使用 `vercel --prod` 部署到生产环境后，让我们来看看实际效果展示
 
-![cusdis-bot](cusdis-bot-final-result.jpg)
+![cusdis-bot](https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/cusdis-bot-final-result.jpg)
 
 你可以给自己的网站添加 [Cusdis](https://cusdis.com/) 评论服务，并设置
