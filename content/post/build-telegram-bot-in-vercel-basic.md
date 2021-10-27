@@ -85,9 +85,10 @@ Telegram Bot 有两种模式：
 
 在 Serverless Function 中我们使用 Webhook 的方式来处理请求
 
-在根目录下创建`index.tx`，部署程序时自动设置 Webhook
+在根目录下创建`index.ts`，部署程序时自动设置 Webhook
 
 ```ts
+// index.ts
 import { Bot } from 'grammy'
 
 const { BOT_TOKEN, BOT_WEBHOOK } = process.env
