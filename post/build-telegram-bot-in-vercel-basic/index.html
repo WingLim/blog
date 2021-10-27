@@ -2,15 +2,15 @@
 <head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="shortcut icon" type=image/png href=/favicon.png>
-<title>使用 Go 在 Vercel 上部署 Telegram Bot | 界限</title>
+<title>在 Vercel 上部署 Telegram Bot（一）：基本搭建 | 界限</title>
 <script>(function(){let b=window.matchMedia('(prefers-color-scheme: dark)').matches===!0,c="light",a=a=>{document.documentElement.dataset.scheme=a};c=="dark"||b?a('dark'):a('light')})()</script>
 <link rel=stylesheet href=/scss/style.min.93e719b6cc88030c31d337480ce937cbc8174b196f0e74725fa1cab54a1d28a3.css><script src=https://code.iconify.design/2/2.0.4/iconify.min.js></script>
-<meta property="og:title" content="使用 Go 在 Vercel 上部署 Telegram Bot | 界限">
+<meta property="og:title" content="在 Vercel 上部署 Telegram Bot（一）：基本搭建 | 界限">
 <meta property="og:description" content="是机器人！">
-<meta property="og:url" content="https://blog.limx.dev/post/build-telegram-bot-in-vercel-with-go/">
+<meta property="og:url" content="https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/">
 <meta property="og:site_name" content="界限">
-<meta property="og:type" content="article"><meta property="og:locale" content="zh-cn"><meta property="article:section" content="Post"><meta property="article:tag" content="Telegram"><meta property="article:tag" content="Golang"><meta property="article:tag" content="Vercel"><meta property="article:published_time" content="2021-10-25T14:47:30+08:00"><meta property="article:modified_time" content="2021-10-25T14:47:30+08:00">
-<meta name=twitter:card content="summary"><meta name=twitter:title content="使用 Go 在 Vercel 上部署 Telegram Bot | 界限">
+<meta property="og:type" content="article"><meta property="og:locale" content="zh-cn"><meta property="article:section" content="Post"><meta property="article:tag" content="Telegram"><meta property="article:tag" content="Bot"><meta property="article:tag" content="Vercel"><meta property="article:published_time" content="2021-10-25T14:47:30+08:00"><meta property="article:modified_time" content="2021-10-25T14:47:30+08:00">
+<meta name=twitter:card content="summary"><meta name=twitter:title content="在 Vercel 上部署 Telegram Bot（一）：基本搭建 | 界限">
 <meta name=twitter:description content="是机器人！">
 </head>
 <body><header class=header>
@@ -46,7 +46,7 @@
 </header><main class=page-content>
 <div class="post-intro wrapper">
 <h1 class=title>
-使用 Go 在 Vercel 上部署 Telegram Bot
+在 Vercel 上部署 Telegram Bot（一）：基本搭建
 </h1>
 <p class=description>是机器人！</p>
 <div class=meta>
@@ -62,7 +62,7 @@
 <span class=label>Tags</span>
 <span class=value>
 <a href=/tags/telegram/>#Telegram</a>
-<a href=/tags/golang/>#Golang</a>
+<a href=/tags/bot/>#Bot</a>
 <a href=/tags/vercel/>#Vercel</a>
 </span>
 </div>
@@ -82,8 +82,9 @@
 </nav>
 </div>
 <div class=post-content>
-<p>Telegram Bot 提供了另一种交互方式，而且可以通过 Webhook 的方式将 Bot 后端部署在 Vercel 的 Serverless Function 上，来实现一个 Maintenance-free 的服务。</p>
-<p>这里以 <a href=https://github.com/WingLim/ddns-telegram-bot>ddns-telegram-bot</a> 为例，这是一个通知用户 DDNS 变动的机器人。</p>
+<p>Telegram Bot 提供了另一种用户与服务交互的方式，通过与 Bot 的对话，按钮等方式来简化服务的执行</p>
+<p>同时我们可以通过 Webhook 的方式将 Bot 后端部署在 Vercel 的 Serverless Function 上，来实现一个 Maintenance-free 的服务</p>
+<p>这里以 <a href=https://github.com/WingLim/cusdsi-telegram-bot>cusdis-telegram-bot</a> 为例，这是一个通知用户评论，并且可以在 Bot 中通过或回复评论的机器人</p>
 <h2 id=创建并设置-bot>创建并设置 Bot</h2>
 <p>创建机器人十分简单，只需要四步</p>
 <ol>
@@ -106,116 +107,80 @@ yarn global add vercel
 </code></pre></div><p>初始化项目并下载依赖</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>mkdir project-bot
 <span class=nb>cd</span> project-bot
-go mod init project-bot
-go get -u github.com/go-telegram-bot-api/telegram-bot-api
+<span class=c1># Vercel 的类型库</span>
+pnpm i -D @vercel/node
+<span class=c1># 这是一个 Typescript 的 Telegram Bot 框架</span>
+pnpm i grammy
 </code></pre></div><h2 id=创建-serverless-function>创建 Serverless Function</h2>
-<p>使用 Go Runtime 时，Serverless Function 要在 <code>api</code> 目录下，文件名即对应路径</p>
+<p>Serverless Function 要在 <code>api</code> 目录下，文件名即对应路径</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>mkdir api
-<span class=c1># 路径为 https://your-subdomain.vercel.app/api/go</span>
-touch api/bot.go
-</code></pre></div><p>在 <code>bot.go</code> 中，需要定义为 <code>handler</code> 包，并且需要包含符合 <a href=https://pkg.go.dev/net/http#HandlerFunc><code>HandlerFunc</code></a> 签名的导出函数</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>handler</span>
+<span class=c1># 路径为 https://your-subdomain.vercel.app/api/bot</span>
+touch api/bot.ts
+</code></pre></div><p>在 <code>bot.ts</code> 中，需要导出一个默认的函数，接受请求和响应</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=kr>import</span> <span class=p>{</span> <span class=nx>VercelRequest</span><span class=p>,</span> <span class=nx>VercelResponse</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;@vercel/node&#39;</span><span class=p>;</span>
 
-<span class=kn>import</span> <span class=p>(</span>
-  <span class=s>&#34;fmt&#34;</span>
-  <span class=s>&#34;net/http&#34;</span>
-<span class=p>)</span>
-
-<span class=kd>func</span> <span class=nf>BotHandler</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
-  <span class=nx>fmt</span><span class=p>.</span><span class=nf>Fprintf</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=s>&#34;&lt;h1&gt;Hello from Go!&lt;/h1&gt;&#34;</span><span class=p>)</span>
-<span class=p>}</span>
+<span class=kr>export</span> <span class=k>default</span> <span class=p>(</span><span class=nx>request</span>: <span class=kt>VercelRequest</span><span class=p>,</span> <span class=nx>response</span>: <span class=kt>VercelResponse</span><span class=p>)</span> <span class=o>=&gt;</span> <span class=p>{</span>
+	<span class=kr>const</span> <span class=p>{</span> <span class=nx>name</span> <span class=o>=</span> <span class=s1>&#39;World&#39;</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>request</span><span class=p>.</span><span class=nx>query</span><span class=p>;</span>
+	<span class=nx>response</span><span class=p>.</span><span class=nx>status</span><span class=p>(</span><span class=mi>200</span><span class=p>).</span><span class=nx>send</span><span class=p>(</span><span class=sb>`Hello </span><span class=si>${</span><span class=nx>name</span><span class=si>}</span><span class=sb>!`</span><span class=p>);</span>
+<span class=p>};</span>
 </code></pre></div><p>Telegram Bot 有两种模式：</p>
 <ol>
-<li>Polling
-用户需要定期轮询，获取信息并处理</li>
-<li>Webhook
-Bot 收到消息后向用户设置的 Webhook 发送消息</li>
+<li>
+<p>Polling</p>
+<p>用户需要定期轮询，获取信息并处理</p>
+</li>
+<li>
+<p>Webhook</p>
+<p>Bot 收到消息后向用户设置的 Webhook 发送消息</p>
+</li>
 </ol>
-<p>在 Webhook 模式下，Webhook 返回的响应可以直接作为 <a href=https://core.telegram.org/bots/api#message>Message</a> 发送给用户</p>
-<p><figure>
-<img src=https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/202110251452862.png loading=lazy alt="Message Communication Flow">
-<figcaption>Message Communication Flow</figcaption>
-</figure></p>
-<p>因此我们可以接收到请求并处理完后，直接返回响应，即可在对话中返回消息</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>handler</span>
+<p>在 Serverless Function 中我们使用 Webhook 的方式来处理请求</p>
+<p>在根目录下创建<code>index.tx</code>，部署程序时自动设置 Webhook</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=kr>import</span> <span class=p>{</span> <span class=nx>Bot</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;grammy&#39;</span>
 
-<span class=kn>import</span> <span class=p>(</span>
-	<span class=s>&#34;encoding/json&#34;</span>
-	<span class=s>&#34;io/ioutil&#34;</span>
-	<span class=s>&#34;log&#34;</span>
-	<span class=s>&#34;net/http&#34;</span>
+<span class=kr>const</span> <span class=p>{</span> <span class=nx>BOT_TOKEN</span><span class=p>,</span> <span class=nx>BOT_WEBHOOK</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>process</span><span class=p>.</span><span class=nx>env</span>
 
-	<span class=nx>tgbotapi</span> <span class=s>&#34;github.com/go-telegram-bot-api/telegram-bot-api&#34;</span>
-<span class=p>)</span>
+<span class=kr>export</span> <span class=kr>const</span> <span class=nx>bot</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Bot</span><span class=p>(</span><span class=nx>BOT_TOKEN</span><span class=p>)</span>
 
-<span class=c1>// BotResponse 是一个简单的消息响应结构体
-</span><span class=c1>// 用于回复对话中的消息
-</span><span class=c1></span><span class=kd>type</span> <span class=nx>BotResponse</span> <span class=kd>struct</span> <span class=p>{</span>
-	<span class=nx>Msg</span>    <span class=kt>string</span> <span class=s>`json:&#34;text&#34;`</span>
-	<span class=nx>ChatID</span> <span class=kt>int64</span>  <span class=s>`json:&#34;chat_id&#34;`</span>
-	<span class=nx>Method</span> <span class=kt>string</span> <span class=s>`json:&#34;method&#34;`</span>
+<span class=nx>bot</span><span class=p>.</span><span class=nx>api</span><span class=p>.</span><span class=nx>setWebhook</span><span class=p>(</span><span class=nx>BOT_WEBHOOK</span><span class=p>)</span>
+</code></pre></div><p>然后我们来创建一个简单的命令 <code>/start</code></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// api/bot.ts
+</span><span class=c1></span><span class=kr>import</span> <span class=p>{</span> <span class=nx>VercelRequest</span><span class=p>,</span> <span class=nx>VercelResponse</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;@vercel/node&#39;</span>
+<span class=kr>import</span> <span class=p>{</span> <span class=nx>webhookCallback</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;grammy&#39;</span>
+<span class=kr>import</span> <span class=p>{</span> <span class=nx>bot</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;../index&#39;</span>
+
+<span class=nx>bot</span><span class=p>.</span><span class=nx>command</span><span class=p>(</span><span class=s1>&#39;start&#39;</span><span class=p>,</span> <span class=kr>async</span> <span class=p>(</span><span class=nx>ctx</span><span class=p>)</span> <span class=o>=&gt;</span> <span class=p>{</span>
+    <span class=k>await</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>reply</span><span class=p>(</span><span class=s1>&#39;Welcome to use Cusdis Bot&#39;</span><span class=p>)</span>
+<span class=p>})</span>
+
+<span class=kr>export</span> <span class=k>default</span> <span class=kr>async</span> <span class=p>(</span><span class=nx>req</span>: <span class=kt>VercelRequest</span><span class=p>,</span> <span class=nx>res</span>: <span class=kt>VercelResponse</span><span class=p>)</span> <span class=o>=&gt;</span> <span class=p>{</span>
+    <span class=nx>webhookCallback</span><span class=p>(</span><span class=nx>bot</span><span class=p>,</span> <span class=s1>&#39;http&#39;</span><span class=p>)(</span><span class=nx>req</span><span class=p>,</span> <span class=nx>res</span><span class=p>)</span>
 <span class=p>}</span>
 
-<span class=kd>func</span> <span class=nf>BotHandler</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>r</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
-	<span class=k>defer</span> <span class=nx>r</span><span class=p>.</span><span class=nx>Body</span><span class=p>.</span><span class=nf>Close</span><span class=p>()</span>
-	<span class=nx>body</span><span class=p>,</span> <span class=nx>_</span> <span class=o>:=</span> <span class=nx>ioutil</span><span class=p>.</span><span class=nf>ReadAll</span><span class=p>(</span><span class=nx>r</span><span class=p>.</span><span class=nx>Body</span><span class=p>)</span>
-	<span class=c1>// 将 body 解析为 Update Message
-</span><span class=c1></span>	<span class=kd>var</span> <span class=nx>update</span> <span class=nx>tgbotapi</span><span class=p>.</span><span class=nx>Update</span>
-	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Unmarshal</span><span class=p>(</span><span class=nx>body</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>update</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
-		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatal</span><span class=p>(</span><span class=s>&#34;Error to parse Telegram request&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
-	<span class=p>}</span>
-
-	<span class=nx>chatId</span> <span class=o>:=</span> <span class=nx>update</span><span class=p>.</span><span class=nx>Message</span><span class=p>.</span><span class=nx>Chat</span><span class=p>.</span><span class=nx>ID</span>
-	<span class=nx>text</span> <span class=o>:=</span> <span class=s>&#34;&#34;</span>
-	<span class=c1>// 处理命令
-</span><span class=c1></span>	<span class=k>if</span> <span class=nx>update</span><span class=p>.</span><span class=nx>Message</span><span class=p>.</span><span class=nf>IsCommand</span><span class=p>()</span> <span class=p>{</span>
-		<span class=k>switch</span> <span class=nx>update</span><span class=p>.</span><span class=nx>Message</span><span class=p>.</span><span class=nf>Command</span><span class=p>()</span> <span class=p>{</span>
-		<span class=k>case</span> <span class=s>&#34;start&#34;</span><span class=p>:</span>
-			<span class=nx>text</span> <span class=p>=</span> <span class=s>&#34;Welcome to use DDNS Bot!&#34;</span>
-		<span class=p>}</span>
-
-		<span class=nx>resp</span> <span class=o>:=</span> <span class=nx>BotResponse</span><span class=p>{</span>
-			<span class=nx>Msg</span><span class=p>:</span>    <span class=nx>text</span><span class=p>,</span>
-			<span class=nx>ChatID</span><span class=p>:</span> <span class=nx>chatId</span><span class=p>,</span>
-			<span class=nx>Method</span><span class=p>:</span> <span class=s>&#34;sendMessage&#34;</span><span class=p>,</span>
-		<span class=p>}</span>
-		
-		<span class=c1>// 写回响应
-</span><span class=c1></span>		<span class=nx>w</span><span class=p>.</span><span class=nf>Header</span><span class=p>().</span><span class=nf>Add</span><span class=p>(</span><span class=s>&#34;Content-Type&#34;</span><span class=p>,</span> <span class=s>&#34;application/json&#34;</span><span class=p>)</span>
-		<span class=nx>_</span> <span class=p>=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>NewEncoder</span><span class=p>(</span><span class=nx>w</span><span class=p>).</span><span class=nf>Encode</span><span class=p>(</span><span class=nx>resp</span><span class=p>)</span>
-	<span class=p>}</span>
-<span class=p>}</span>
-</code></pre></div><p>到这里，我们给我们的机器人添加了 <code>/start</code> 命令的处理，当用户发送 <code>/start</code> 到 Bot 时，Bot 会回复 <code>Welcome to use DDNS Bot!</code></p>
+</code></pre></div><p>到这里，我们给我们的机器人添加了 <code>/start</code> 命令的处理，当用户发送 <code>/start</code> 到 Bot 时，Bot 会回复 <code>Welcome to use Cusdis Bot</code></p>
 <h2 id=部署并设置-webhook>部署并设置 Webhook</h2>
 <p>使用 Vercel CLI 进行部署</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>vercel
-</code></pre></div><p>打开 <a href=https://vercel.com/dashboard>dashboard</a> 并复制项目 URL <code>https://your-subdomain.vercel.app</code></p>
-<p>使用 <code>curl</code>, <code>wget</code> 或者浏览器访问下面链接将 Telegram Bot 设置为 Webhook 模式</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=c1># `{token}` 替换为你的 Token</span>
-<span class=c1># `{url}` 替换为 `https://your-subdomain.vercel.app/api/bot`</span>
-
-https://api.telegram.org/bot<span class=o>{</span>token<span class=o>}</span>/setWebhook?url<span class=o>={</span>url<span class=o>}</span>
-</code></pre></div><p>返回如下响应即设置成功</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=p>{</span>
-  <span class=err>ok:</span> <span class=err>true,</span>
-  <span class=err>result:</span> <span class=err>true,</span>
-  <span class=err>description:</span> <span class=nt>&#34;Webhook was set&#34;</span>
-<span class=p>}</span>
-</code></pre></div><p>最后部署到生产环境中</p>
+</code></pre></div><p>打开 <a href=https://vercel.com/dashboard>dashboard</a>，设置项目的环境变量</p>
+<ol>
+<li><code>BOT_TOKEN</code></li>
+<li><code>BOT_WEBHOOK</code>: <code>https://your-project-name.vercel.app/api/bot</code></li>
+</ol>
+<p>最后部署到生产环境中</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>vercel --prod
 </code></pre></div><h2 id=结果>结果</h2>
 <p>打开 Bot，发送 <code>/start</code></p>
 <p><figure>
-<img src=https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/202110251518784.png loading=lazy alt="Chat with bot">
-<figcaption>Chat with bot</figcaption>
+<img src=https://cdn.jsdelivr.net/gh/WingLim/winglim.github.io@hugo/static/images/cusdis-bot-start.jpeg loading=lazy alt="Start with bot">
+<figcaption>Start with bot</figcaption>
 </figure></p>
 <h2 id=总结>总结</h2>
 <p>因为 Serverless Function 无状态的原因，通过 Vercel 来部署 Telegram Bot 适合一些不需要依赖上下文状态的功能，举个简单的例子，比如说汇率查询，股价查询等。</p>
-<p>但 Vercel 在逐步支持<a href=https://vercel.com/integrations>集成第三方服务</a>，也可以通过 <a href=https://vercel.com/integrations/upstash>Upstash</a> 这个 Serverless Redis 来读写状态，如果后续还有进一步的需求的话，会接着再多写两篇文章介绍相关内容。</p>
+<p>但 Vercel 在逐步支持<a href=https://vercel.com/integrations>集成第三方服务</a>，可以通过 <a href=https://vercel.com/integrations/upstash>Upstash</a> 这个 Serverless Redis 来读写状态。</p>
 </div>
 </div>
 <div class="wrapper comments">
-<div id=cusdis_thread data-host=https://cusdis.limxw.com data-app-id=d5c63066-e952-4a1d-8844-0a9f9796d97d data-page-id=dc6b6d322b658c20605145cf2e835175 data-page-url=https://blog.limx.dev/post/build-telegram-bot-in-vercel-with-go/ data-page-title="使用 Go 在 Vercel 上部署 Telegram Bot"></div>
+<div id=cusdis_thread data-host=https://cusdis.limxw.com data-app-id=d5c63066-e952-4a1d-8844-0a9f9796d97d data-page-id=210907c56211ab0ca5e8e2a5772cbe8c data-page-url=https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/ data-page-title="在 Vercel 上部署 Telegram Bot（一）：基本搭建"></div>
 <script async defer src=https://cusdis.limxw.com/js/cusdis.es.js></script>
 <script>let setCusdisTheme=a=>{let b=document.querySelector('#cusdis_thread iframe');b&&window.CUSDIS.setTheme(a)};window.addEventListener('colorSchemeChange',a=>{setCusdisTheme(a.detail)})</script>
 </div>

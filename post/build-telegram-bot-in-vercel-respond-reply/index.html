@@ -1,0 +1,260 @@
+<!doctype html><html lang=zh-cn>
+<head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="shortcut icon" type=image/png href=/favicon.png>
+<title>在 Vercel 上部署 Telegram Bot（二）：通过与回复 | 界限</title>
+<script>(function(){let b=window.matchMedia('(prefers-color-scheme: dark)').matches===!0,c="light",a=a=>{document.documentElement.dataset.scheme=a};c=="dark"||b?a('dark'):a('light')})()</script>
+<link rel=stylesheet href=/scss/style.min.93e719b6cc88030c31d337480ce937cbc8174b196f0e74725fa1cab54a1d28a3.css><script src=https://code.iconify.design/2/2.0.4/iconify.min.js></script>
+<meta property="og:title" content="在 Vercel 上部署 Telegram Bot（二）：通过与回复 | 界限">
+<meta property="og:description" content="Hey Bot, 帮我同意和回复一下评论">
+<meta property="og:url" content="https://blog.limx.dev/post/build-telegram-bot-in-vercel-respond-reply/">
+<meta property="og:site_name" content="界限">
+<meta property="og:type" content="article"><meta property="og:locale" content="zh-cn"><meta property="article:section" content="Post"><meta property="article:tag" content="Telegram"><meta property="article:tag" content="Bot"><meta property="article:tag" content="Vercel"><meta property="article:published_time" content="2021-10-27T15:07:15+08:00"><meta property="article:modified_time" content="2021-10-27T15:07:15+08:00">
+<meta name=twitter:card content="summary"><meta name=twitter:title content="在 Vercel 上部署 Telegram Bot（二）：通过与回复 | 界限">
+<meta name=twitter:description content="Hey Bot, 帮我同意和回复一下评论">
+</head>
+<body><header class=header>
+<div class=container>
+<div class=header-content>
+<a href=/ class=site-title-link><svg xmlns="http://www.w3.org/2000/svg" width="192" height="96"><path d="M23.74 66.86H16.49q.5-1.34 1.49-4.36Q18.97 59.48 20.21 55.57q1.24-3.91 2.51-7.98 1.27-4.07 2.35-7.67 1.08-3.59 1.81-5.98Q27.62 31.56 27.68 31.18 27.74 30.86 28.31 30.89 28.89 30.92 29.08 30.92h5.85Q35.06 30.92 34.71 31.4 34.36 31.88 34.17 31.88H31.49Q30.8 31.88 30.06 31.88 29.33 31.88 28.7 31.94 28.25 33.4 27.39 36.11 26.53 38.81 25.48 42.21q-1.04 3.41-2.16 7.03-1.11 3.63-2.13 6.96-1.02 3.34-1.81 5.89Q18.58 64.63 18.2 65.84h6.3Q24.63 65.84 24.28 66.32 23.93 66.79 23.74 66.86z" fill="#000"/><path d="M85.25 72.45Q83.53 72.45 80.79 71.4 78.06 70.36 74.82 68.67 71.57 66.98 68.36 65.14 65.15 63.3 62.48 61.64 59.81 59.99 58.28 58.97 57.58 60.5 56.37 62.72q-1.21 2.23-2.76 4.39-1.56 2.16-3.38 3.63Q48.42 72.2 46.39 72.2q-2.04.0-3.72-1.59Q40.98 69.02 39.68 66.54 38.37 64.06 37.48 61.23 36.59 58.4 36.15 55.85 35.7 53.31 35.7 51.66 35.7 51.4 35.73 50.8 35.77 50.19 35.96 49.65 36.15 49.11 36.53 49.11 36.97 49.11 36.97 49.65 36.97 50.19 36.97 50.51q0 1.72.32 3.91Q37.61 56.62 38.18 58.75q.57 2.13 1.27 3.72Q40.03 63.68 40.98 65.39 41.93 67.11 43.27 68.45q1.34 1.33 2.93 1.33Q47.79 69.78 49.28 68.32 50.78 66.86 52.02 64.73 53.26 62.6 54.18 60.53 55.1 58.46 55.61 57.25 54.59 56.62 52.78 55.5q-1.81-1.11-3.94-2.38Q46.7 51.85 44.54 50.7q-2.16-1.14-4-1.87Q38.69 48.1 37.55 48.1q-1.59.0-2.29 1.01Q34.56 50.13 34.56 51.66 34.56 52.55 34.81 53.44 35.07 54.33 35.07 55.22 35.07 55.35 35 55.79 34.94 56.24 34.62 56.24 34.3 56.24 34.02 55.38 33.73 54.52 33.6 53.57 33.48 52.61 33.48 52.29 33.48 50.58 34.02 49.02 34.56 47.46 35.77 46.44q1.2-1.02 3.05-1.02 1.84.0 4.26 1.05 2.42 1.05 4.96 2.61 2.54 1.56 4.77 3.15 2.23 1.59 3.75 2.67Q57.39 52.87 58.6 49.78q1.21-3.08 2.8-6.61 1.59-3.53 3.49-7 1.91-3.47 4.14-6.33 2.22-2.86 4.7-4.58 2.49-1.71 5.16-1.71Q80.54 23.55 81.56 24.4 82.58 25.26 83.08 26.73 83.15 26.92 83.18 27.11 83.21 27.3 83.21 27.49 83.21 28.51 82.67 29.56 82.13 30.61 81.43 31.31 81.37 31.37 81.11 31.59 80.86 31.81 80.73 31.81 80.54 31.81 80.54 31.56 80.54 31.05 80.73 30.57 80.92 30.1 80.92 29.59q0-1.66-1.02-3.02Q78.89 25.2 77.11 25.2 76.66 25.2 76.18 25.33 75.71 25.45 75.26 25.64 73.8 26.34 72.34 28.25q-1.47 1.91-2.83 4.49-1.37 2.57-2.58 5.27Q65.72 40.72 64.77 43.07 63.81 45.42 63.24 46.89q-1.02 2.48-1.97 4.96Q60.32 54.33 59.23 56.81 62.35 59.03 66.2 61.71 70.05 64.38 74.12 66.57 78.19 68.77 81.94 69.66 82.7 69.85 83.53 69.85 84.17 69.85 84.58 69.59 84.99 69.34 84.99 68.64 84.99 67.88 84.61 66.98 84.23 66.09 83.82 65.36 83.4 64.63 83.4 64.5 83.4 64.25 83.59 64.25 83.91 64.25 84.48 65.04 85.06 65.84 85.69 66.98 86.33 68.13 86.74 69.21 87.15 70.29 87.15 70.86 87.15 71.69 86.61 72.07 86.07 72.45 85.25 72.45z" fill="#000"/><path d="M103.6 66.86H95.97V66.79Q95.97 66.67 96.29 66.25 96.61 65.84 96.8 65.84h5.78Q102.97 64.63 103.79 62.09 104.62 59.54 105.7 56.2 106.78 52.87 107.96 49.24 109.14 45.62 110.25 42.21q1.11-3.4 1.97-6.1Q113.08 33.4 113.52 31.94 112.89 31.88 112.12 31.88 111.36 31.88 110.53 31.88h-2.92Q107.48 31.88 107.86 31.4 108.25 30.92 108.44 30.92h5.91Q115.11 30.92 115.05 31.18 114.86 31.56 114.06 33.94 113.27 36.33 112.09 39.92q-1.17 3.6-2.48 7.67Q108.31 51.66 107.07 55.57 105.83 59.48 104.91 62.5 103.98 65.52 103.6 66.86z" fill="#000"/><path d="M125.59 43.71Q125.4 43.71 125.37 43.23 125.33 42.75 125.33 42.63 125.33 42.44 125.4 41.8 125.46 41.16 125.78 41.1 126.67 40.97 127.56 40.78 128.45 40.59 129.34 40.34 129.47 40.27 129.72 40.27 130.04 40.27 130.04 40.59 130.04 41.29 129.18 42.02 128.32 42.75 127.27 43.23 126.22 43.71 125.59 43.71zM120.44 64.31q-3.12.0-3.12-3.18Q117.32 59.8 117.73 58.4 118.15 57 118.66 55.79 119.23 54.39 119.93 53.06 120.63 51.72 121.33 50.39 121.65 49.81 121.93 49.21 122.22 48.6 122.54 48.03 122.85 47.59 123.74 47.27 124.63 46.95 125.14 46.95 125.21 46.95 125.14 46.98L125.08 47.01H125.11Q125.14 47.01 125.14 47.08 125.27 46.95 125.46 46.95 125.72 46.95 125.78 47.17 125.84 47.4 125.84 47.59 125.84 48.03 125.49 48.92 125.14 49.81 124.67 50.61 124.19 51.4 123.74 51.59 123.17 52.93 122.25 54.52 121.33 56.11 120.56 57.73 119.8 59.35 119.8 60.88 119.8 62.66 121.71 62.66 122.6 62.66 123.65 62.09 124.7 61.52 125.72 60.72 126.73 59.93 127.46 59.35 128.2 58.78 128.39 58.78 128.45 58.78 128.45 58.81V58.84Q128.45 59.1 128.26 59.38 128.07 59.67 127.94 59.8 127.18 60.82 125.91 61.86 124.63 62.91 123.2 63.61 121.77 64.31 120.44 64.31zM126.48 65.27Q126.1 65.27 126.1 64.95 127.81 62.02 129.09 58.94 130.36 55.85 131.57 52.74L132.27 50.89Q132.27 50.7 131.92 50.77 131.57 50.83 131.57 50.58 131.57 50.45 132.11 49.59 132.65 48.73 133.22 47.81 133.79 46.89 133.92 46.7 134.17 46.31 135.07 45.93 135.96 45.55 136.4 45.55 137.04 45.55 137.04 46.12 137.04 46.31 136.43 47.75 135.83 49.18 135 51.12 134.17 53.06 133.48 54.74 132.78 56.43 132.58 57.13 133.09 56.49 134.24 55.25 135.38 54.01 136.85 52.55 138.31 51.08 139.84 49.75 141.36 48.41 142.6 47.55 143.84 46.7 144.54 46.7 145.11 46.7 145.27 47.17 145.43 47.65 145.43 48.1 145.43 49.3 144.89 51.15 144.35 52.99 143.65 54.84 142.95 56.68 142.44 57.83 143.71 56.75 145.21 55.31 146.7 53.88 148.1 52.36 149.5 50.83 150.39 49.49 150.9 48.86 151.6 48.86q1.34.0 1.34 1.27Q152.94 50.77 152.49 52.04 152.05 53.31 151.47 53.63 151.16 54.96 150.9 56.4q-.25 1.43-.25 2.89Q150.65 59.86 150.77 60.66 150.9 61.45 151.28 62.06 151.66 62.66 152.43 62.66 153.32 62.66 154.27 62.09 155.23 61.52 156.12 60.72 157.01 59.93 157.64 59.35 158.28 58.78 158.47 58.78 158.6 58.78 158.6 58.91 158.6 59.1 158.47 59.38 158.34 59.67 158.22 59.8 157.26 61.39 155.32 62.85q-1.94 1.46-3.91 1.46Q149.31 64.31 148.48 62.98 147.66 61.64 147.66 59.8 147.66 57.83 148.26 55.82 148.87 53.82 149.5 52.04 147.91 54.01 146.07 55.89 144.22 57.76 142.38 59.48 141.93 60.88 140.69 62.41 139.45 63.93 137.8 63.93 137.74 63.93 137.51 63.87 137.29 63.8 137.29 63.61V63.55Q137.29 63.49 137.35 63.49 137.8 62.28 138.53 60.56 139.26 58.84 140.06 56.94 140.85 55.03 141.39 53.31 141.93 51.59 141.93 50.45 141.93 50.26 141.9 50 141.87 49.75 141.55 49.75 140.98 49.75 139.93 50.67 138.88 51.59 137.61 53.02 136.34 54.46 135.1 55.98 133.86 57.51 132.9 58.75 131.95 59.99 131.63 60.5 130.61 61.96 129.79 63.55 129.66 63.87 128.99 64.28 128.32 64.7 127.59 64.98 126.86 65.27 126.48 65.27zm38.16-21.56Q164.45 43.71 164.42 43.23 164.38 42.75 164.38 42.63 164.38 42.44 164.45 41.8 164.51 41.16 164.83 41.1 165.72 40.97 166.61 40.78 167.5 40.59 168.39 40.34 168.52 40.27 168.77 40.27 169.09 40.27 169.09 40.59 169.09 41.29 168.23 42.02 167.37 42.75 166.32 43.23 165.28 43.71 164.64 43.71zM159.49 64.31q-3.12.0-3.12-3.18Q156.37 59.8 156.78 58.4 157.2 57 157.71 55.79 158.28 54.39 158.98 53.06 159.68 51.72 160.38 50.39 160.7 49.81 160.98 49.21 161.27 48.6 161.59 48.03 161.9 47.59 162.79 47.27 163.69 46.95 164.19 46.95 164.26 46.95 164.19 46.98L164.13 47.01H164.16Q164.19 47.01 164.19 47.08 164.32 46.95 164.51 46.95 164.77 46.95 164.83 47.17 164.89 47.4 164.89 47.59 164.89 48.03 164.54 48.92 164.19 49.81 163.72 50.61 163.24 51.4 162.79 51.59 162.22 52.93 161.3 54.52 160.38 56.11 159.61 57.73 158.85 59.35 158.85 60.88 158.85 62.66 160.76 62.66 161.65 62.66 162.7 62.09 163.75 61.52 164.77 60.72 165.78 59.93 166.52 59.35 167.25 58.78 167.44 58.78 167.5 58.78 167.5 58.81V58.84Q167.5 59.1 167.31 59.38 167.12 59.67 166.99 59.8 166.23 60.82 164.96 61.86 163.69 62.91 162.25 63.61 160.82 64.31 159.49 64.31zm10.36.0Q166.74 64.31 166.74 61.13 166.74 59.23 167.66 56.84 168.58 54.46 169.82 52.1 171.06 49.75 171.89 48.1 171 48.16 169.82 48.38 168.65 48.6 167.82 48.6 167.56 48.6 167.34 48.51 167.12 48.41 167.12 48.16 167.12 47.78 167.5 47.65 167.95 47.33 168.42 47.08 168.9 46.82 169.35 46.57 170.62 45.74 171.79 44.76 172.97 43.77 174.05 42.69 174.31 42.18 174.53 41.77 174.75 41.35 175.39 41.16 175.9 41.04 176.85 40.59 177.8 40.15 178.25 40.15 178.57 40.15 178.57 40.4 178.57 40.59 178.15 41.42 177.74 42.24 177.17 43.29 176.6 44.34 176.12 45.2 175.64 46.06 175.51 46.25 175.9 46.25 176.88 46.25 177.87 46.25 179.01 46.31 180.16 46.38 180.98 46.57 181.81 46.76 181.81 47.08 181.81 47.33 181.46 47.43 181.11 47.52 180.73 47.52 179.2 47.52 177.71 47.55 176.21 47.59 174.75 47.78 174.12 48.92 173.26 50.61 172.4 52.29 171.54 54.17 170.68 56.05 170.11 57.79 169.54 59.54 169.54 60.82 169.54 61.64 169.89 62.15 170.24 62.66 171.13 62.66 172.02 62.66 173.1 62.09 174.18 61.52 175.16 60.72 176.15 59.93 176.88 59.35 177.61 58.78 177.8 58.78 177.87 58.78 177.87 58.81V58.84Q177.87 59.1 177.71 59.38 177.55 59.67 177.42 59.8 176.6 60.82 175.32 61.86 174.05 62.91 172.62 63.61 171.19 64.31 169.85 64.31zM170.49 46.63Q171.06 46.51 171.6 46.47 172.14 46.44 172.65 46.38 172.84 45.93 172.97 45.49 173.1 45.04 173.23 44.6 172.53 45.04 171.86 45.58 171.19 46.12 170.49 46.63z" fill="#000"/></svg>
+</a>
+<nav class=navigation>
+<ul>
+<li>
+<a class=nav-link href=/archives title=Archives>
+<span class=iconify data-icon=fluent:archive-multiple-24-regular data-width=24 data-height=24></span>
+<p class=use-title>Archives</p>
+</a>
+</li>
+<li>
+<a class=nav-link href=/feed.xml title=Feed>
+<span class=iconify data-icon=fluent:rss-24-regular data-width=24 data-height=24></span>
+<p class=use-title>Feed</p>
+</a>
+</li>
+</ul>
+</nav>
+<div class=actions>
+<div class=nav-toggle>
+<div class=line></div>
+<div class=line></div>
+<div class=line></div>
+</div>
+</div>
+</div>
+</div>
+</header><main class=page-content>
+<div class="post-intro wrapper">
+<h1 class=title>
+在 Vercel 上部署 Telegram Bot（二）：通过与回复
+</h1>
+<p class=description>Hey Bot, 帮我同意和回复一下评论</p>
+<div class=meta>
+<div class="item date">
+<span class=label>Published on</span>
+<span class=value>October 27, 2021</span>
+</div>
+<div class=item>
+<span class=label>Reading time</span>
+<span class=value>3 minutes</span>
+</div>
+<div class=item>
+<span class=label>Tags</span>
+<span class=value>
+<a href=/tags/telegram/>#Telegram</a>
+<a href=/tags/bot/>#Bot</a>
+<a href=/tags/vercel/>#Vercel</a>
+</span>
+</div>
+</div>
+</div>
+<div class="wrapper contents">
+<div class=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#cusdis-webhook>Cusdis Webhook</a></li>
+<li><a href=#使用-redis>使用 Redis</a></li>
+<li><a href=#通过评论>通过评论</a></li>
+<li><a href=#通过回复添加评论>通过回复添加评论</a></li>
+<li><a href=#效果>效果</a></li>
+</ul>
+</nav>
+</div>
+<div class=post-content>
+<p>在<a href=https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/>上一篇文章</a>中我们讲了如何在 Vercel 上部署一个简单的 Telegram Bot，这里我们讲讲如何给 Bot 的消息添加可点击的按钮，以及通过回复 Bot 的消息来回复评论</p>
+<h2 id=cusdis-webhook>Cusdis Webhook</h2>
+<p>首先我们先创建一个 <code>api/hook/[chatId].ts</code> 来处理 Cusdis 发送的 Webhook 请求</p>
+<p>在 Vercel 中 <code>[chatId].ts</code> 可以对应路径 <code>/api/hook/123456</code></p>
+<p>这里隐去了一些类型定义，完整代码可以查看 <a href=https://github.com/WingLim/cusdis-telegram-bot/blob/main/api/hook/%5BchatId%5D.ts>api/hook/[chatId].ts</a></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=kr>import</span> <span class=p>{</span> <span class=nx>VercelRequest</span><span class=p>,</span> <span class=nx>VercelResponse</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;@vercel/node&#39;</span>
+<span class=kr>import</span> <span class=p>{</span> <span class=nx>InlineKeyboard</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;grammy&#39;</span>
+<span class=kr>import</span> <span class=p>{</span> <span class=nx>bot</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;../../index&#39;</span>
+
+<span class=c1>// buildNewCommentMsg 构建发送给用户的通知消息
+</span><span class=c1></span><span class=kd>function</span> <span class=nx>buildNewCommentMsg</span><span class=p>(</span><span class=nx>data</span>: <span class=kt>NewCommentHookData</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>return</span> <span class=sb>`New comment on website &lt;strong&gt;</span><span class=si>${</span>
+        <span class=nx>data</span><span class=p>.</span><span class=nx>project_title</span>
+    <span class=si>}</span><span class=sb>&lt;/strong&gt; in page &lt;strong&gt;</span><span class=si>${</span><span class=nx>data</span><span class=p>.</span><span class=nx>page_title</span><span class=si>}</span><span class=sb>&lt;/strong&gt;:
+</span><span class=sb>&lt;pre&gt;
+</span><span class=sb></span><span class=si>${</span><span class=nx>data</span><span class=p>.</span><span class=nx>content</span><span class=p>.</span><span class=nx>replace</span><span class=p>(</span><span class=sr>/&lt;[^&gt;]*&gt;?/gm</span><span class=p>,</span> <span class=s2>&#34;&#34;</span><span class=p>)</span><span class=si>}</span><span class=sb>
+</span><span class=sb>&lt;/pre&gt;
+</span><span class=sb>by: &lt;strong&gt;</span><span class=si>${</span><span class=nx>data</span><span class=p>.</span><span class=nx>by_nickname</span><span class=si>}</span><span class=sb>&lt;/strong&gt;`</span>
+<span class=p>}</span>
+
+<span class=kr>export</span> <span class=k>default</span> <span class=kr>async</span> <span class=p>(</span><span class=nx>req</span>: <span class=kt>VercelRequest</span><span class=p>,</span> <span class=nx>res</span>: <span class=kt>VercelResponse</span><span class=p>)</span> <span class=o>=&gt;</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=nx>req</span><span class=p>.</span><span class=nx>method</span> <span class=o>===</span> <span class=s1>&#39;POST&#39;</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kr>const</span> <span class=nx>chatId</span> <span class=o>=</span> <span class=nx>req</span><span class=p>.</span><span class=nx>query</span><span class=p>[</span><span class=s1>&#39;chatId&#39;</span><span class=p>]</span> <span class=kr>as</span> <span class=kt>string</span>
+        <span class=kr>const</span> <span class=p>{</span> <span class=kr>type</span><span class=p>,</span> <span class=nx>data</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>req</span><span class=p>.</span><span class=nx>body</span> <span class=kr>as</span> <span class=nx>HookBody</span><span class=p>&lt;</span><span class=nt>NewCommentHookData</span><span class=p>&gt;</span>
+
+        <span class=k>switch</span> <span class=p>(</span><span class=kr>type</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>case</span> <span class=s1>&#39;new_comment&#39;</span><span class=o>:</span> <span class=p>{</span>
+                <span class=kr>const</span> <span class=nx>msg</span> <span class=o>=</span> <span class=nx>buildNewCommentMsg</span><span class=p>(</span><span class=nx>data</span><span class=p>)</span>
+                
+                <span class=c1>// 创建 InlineKeyboard，即附带在消息中的按钮，并且添加 callback_data
+</span><span class=c1></span>                <span class=kr>const</span> <span class=nx>approveKeyboard</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>InlineKeyboard</span><span class=p>().</span><span class=nx>text</span><span class=p>(</span><span class=s1>&#39;Approve&#39;</span><span class=p>,</span> <span class=s1>&#39;approve&#39;</span><span class=p>)</span>
+
+                <span class=kd>let</span> <span class=nx>new_msg</span> <span class=o>=</span> <span class=k>await</span> <span class=nx>bot</span><span class=p>.</span><span class=nx>api</span><span class=p>.</span><span class=nx>sendMessage</span><span class=p>(</span><span class=nx>chatId</span><span class=p>,</span> <span class=nx>msg</span><span class=p>,</span> <span class=p>{</span>
+                    <span class=nx>parse_mode</span><span class=o>:</span> <span class=s1>&#39;HTML&#39;</span><span class=p>,</span>
+                    <span class=nx>reply_markup</span>: <span class=kt>approveKeyboard</span>
+                <span class=p>})</span>
+                <span class=k>break</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+
+        <span class=nx>res</span><span class=p>.</span><span class=nx>json</span><span class=p>({</span>
+            <span class=nx>msg</span><span class=o>:</span> <span class=s2>&#34;works&#34;</span>
+        <span class=p>})</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+</code></pre></div><p>然后我们需要在 Bot 中添加 <code>/gethook</code> 命令来获取给 Cusdis 使用的 Webhook 地址</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// api/bot.ts
+</span><span class=c1></span><span class=kr>const</span> <span class=p>{</span> <span class=nx>VERCEL_URL</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>process</span><span class=p>.</span><span class=nx>env</span>
+
+<span class=nx>bot</span><span class=p>.</span><span class=nx>command</span><span class=p>(</span><span class=s1>&#39;gethook&#39;</span><span class=p>,</span> <span class=kr>async</span> <span class=p>(</span><span class=nx>ctx</span><span class=p>)</span> <span class=o>=&gt;</span> <span class=p>{</span>
+    <span class=kd>let</span> <span class=nx>chanId</span> <span class=o>=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>message</span><span class=p>.</span><span class=nx>chat</span><span class=p>.</span><span class=nx>id</span>
+    <span class=kd>let</span> <span class=nx>hookUrl</span> <span class=o>=</span> <span class=sb>`https://</span><span class=si>${</span><span class=nx>VERCEL_URL</span><span class=si>}</span><span class=sb>/api/hook/</span><span class=si>${</span><span class=nx>chanId</span><span class=si>}</span><span class=sb>`</span>
+    <span class=k>await</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>reply</span><span class=p>(</span><span class=sb>`Your Webhook URL:</span><span class=err>\</span><span class=sb>n </span><span class=si>${</span><span class=nx>hookUrl</span><span class=si>}</span><span class=sb>`</span><span class=p>)</span>
+<span class=p>})</span>
+</code></pre></div><h2 id=使用-redis>使用 Redis</h2>
+<p>因为<a href=https://core.telegram.org/bots/api#inlinekeyboardbutton>InlineKeyboardButton</a>的 callback_data 最高支持 64 字节的数据，而 Cusdis 的 <code>approve_link</code> 包含了 SHA256 的 token，所以我们没有办法直接将 <code>approve_link</code> 包在 Button 里面一起发给用户，所以这里用到 <a href=https://upstash.com/>Upstash</a>（一个 Serverless 的 Redis 服务）来保存</p>
+<p>在 Vercel 中可以通过 Intergrations 来一键集成到项目中：<a href=https://vercel.com/integrations/upstash>Upstash in Vercel</a></p>
+<p>添加库</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell>pnpm i redis@next
+</code></pre></div><p>添加 <code>redis.ts</code></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=kr>import</span> <span class=p>{</span> <span class=nx>createClient</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;redis&#39;</span>
+
+<span class=kr>const</span> <span class=p>{</span> <span class=nx>REDIS_URL</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>process</span><span class=p>.</span><span class=nx>env</span>
+
+<span class=kr>export</span> <span class=kr>const</span> <span class=nx>client</span> <span class=o>=</span> <span class=nx>createClient</span><span class=p>({</span>
+    <span class=nx>url</span>: <span class=kt>REDIS_URL</span>
+<span class=p>})</span>
+</code></pre></div><p>然后我们再将 <code>approve_link</code> 存入 Redis 中，方便后续 Bot 使用</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// api/hook/[chatId].ts
+</span><span class=c1></span><span class=kr>import</span> <span class=p>{</span> <span class=nx>client</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;../../redis&#39;</span>
+
+<span class=p>...</span>
+
+<span class=kd>let</span> <span class=nx>new_msg</span> <span class=o>=</span> <span class=k>await</span> <span class=nx>bot</span><span class=p>.</span><span class=nx>api</span><span class=p>.</span><span class=nx>sendMessage</span><span class=p>(</span><span class=nx>chatId</span><span class=p>,</span> <span class=nx>msg</span><span class=p>,</span> <span class=p>{</span>
+    <span class=nx>parse_mode</span><span class=o>:</span> <span class=s1>&#39;HTML&#39;</span><span class=p>,</span>
+    <span class=nx>reply_markup</span>: <span class=kt>approveKeyboard</span>
+<span class=p>})</span>
+
+<span class=c1>// 设置 key 为聊天 id + 消息 id 这样能保证对于单独的用户来说 key 是唯一的
+</span><span class=c1></span><span class=kd>let</span> <span class=nx>key</span> <span class=o>=</span> <span class=nx>chatId</span> <span class=o>+</span> <span class=nx>new_msg</span><span class=p>.</span><span class=nx>message_id</span><span class=p>.</span><span class=nx>toString</span><span class=p>()</span>
+<span class=k>await</span> <span class=nx>client</span><span class=p>.</span><span class=nx>connect</span><span class=p>()</span>
+<span class=c1>// 设置过期时间为 3 天，和 approve_link 的 token 的过期时间一致
+</span><span class=c1></span><span class=k>await</span> <span class=nx>client</span><span class=p>.</span><span class=kr>set</span><span class=p>(</span><span class=nx>key</span><span class=p>,</span> <span class=nx>data</span><span class=p>.</span><span class=nx>approve_link</span><span class=p>,</span> <span class=p>{</span>
+    <span class=nx>EX</span>: <span class=kt>259200</span>
+<span class=p>})</span>
+<span class=k>break</span>
+
+<span class=p>...</span>
+</code></pre></div><h2 id=通过评论>通过评论</h2>
+<p>在一个包含 <code>callback_data</code> 的按钮被点击后，Bot 会发送消息到 Webhok 上，我们可以使用 <code>bot.callbackQuery()</code> 来监听并处理这个消息</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// api/bot.ts
+</span><span class=c1></span>
+<span class=c1>// 这里的 approve 即为 button 的 callback_data
+</span><span class=c1></span><span class=nx>bot</span><span class=p>.</span><span class=nx>callbackQuery</span><span class=p>(</span><span class=s1>&#39;approve&#39;</span><span class=p>,</span> <span class=kr>async</span> <span class=p>(</span><span class=nx>ctx</span><span class=p>)</span> <span class=o>=&gt;</span> <span class=p>{</span>
+    <span class=kd>let</span> <span class=nx>chatId</span> <span class=o>=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>message</span><span class=p>.</span><span class=nx>chat</span><span class=p>.</span><span class=nx>id</span>
+    <span class=kd>let</span> <span class=nx>key</span> <span class=o>=</span> <span class=nx>chatId</span><span class=p>.</span><span class=nx>toString</span><span class=p>()</span> <span class=o>+</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>message</span><span class=p>.</span><span class=nx>message_id</span><span class=p>.</span><span class=nx>toString</span><span class=p>()</span>
+    <span class=k>await</span> <span class=nx>client</span><span class=p>.</span><span class=nx>connect</span><span class=p>()</span>
+    <span class=kd>let</span> <span class=nx>link</span> <span class=o>=</span> <span class=k>await</span> <span class=nx>client</span><span class=p>.</span><span class=kr>get</span><span class=p>(</span><span class=nx>key</span><span class=p>)</span>
+    <span class=k>if</span> <span class=p>(</span><span class=nx>link</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// Cusdis 的 API 地址为 domain.com/api/open/approve?token=xxx
+</span><span class=c1></span>        <span class=c1>// 而 approve_link 为 domain.com/open/approve，所以这里需要进行替换
+</span><span class=c1></span>        <span class=kd>let</span> <span class=nx>api</span> <span class=o>=</span> <span class=nx>link</span><span class=p>.</span><span class=nx>replace</span><span class=p>(</span><span class=s1>&#39;open&#39;</span><span class=p>,</span> <span class=s1>&#39;api/open&#39;</span><span class=p>)</span>
+        <span class=kd>let</span> <span class=nx>res</span> <span class=o>=</span> <span class=k>await</span> <span class=nx>axios</span><span class=p>.</span><span class=nx>post</span><span class=p>(</span><span class=nx>api</span><span class=p>)</span>
+        <span class=k>if</span> <span class=p>(</span><span class=nx>res</span><span class=p>.</span><span class=nx>status</span> <span class=o>==</span> <span class=mi>200</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 成功则返回 &#39;Successed&#39; 消息
+</span><span class=c1></span>            <span class=k>await</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>answerCallbackQuery</span><span class=p>({</span>
+                <span class=nx>text</span><span class=o>:</span> <span class=s1>&#39;Successed&#39;</span>
+            <span class=p>})</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=c1>// 失败则返回 &#39;Failed&#39; 消息
+</span><span class=c1></span>            <span class=k>await</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>answerCallbackQuery</span><span class=p>({</span>
+                <span class=nx>text</span><span class=o>:</span> <span class=s1>&#39;Failed&#39;</span>
+            <span class=p>})</span>
+        <span class=p>}</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=k>await</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>reply</span><span class=p>(</span><span class=s1>&#39;Token has expired&#39;</span><span class=p>)</span>
+    <span class=p>}</span>
+<span class=p>})</span>
+</code></pre></div><h2 id=通过回复添加评论>通过回复添加评论</h2>
+<p>监听消息，当用户发送的消息是回复消息时，通过回复消息去查找 <code>approve_link</code>，并发送带数据的 POST 请求即可添加评论到指定回复上</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// api/bot.ts
+</span><span class=c1></span>
+<span class=nx>bot</span><span class=p>.</span><span class=nx>on</span><span class=p>(</span><span class=s1>&#39;msg&#39;</span><span class=p>,</span> <span class=kr>async</span> <span class=p>(</span><span class=nx>ctx</span><span class=p>)</span> <span class=o>=&gt;</span> <span class=p>{</span>
+    <span class=c1>// 判断该消息是否回复了某一条消息
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=nx>ctx</span><span class=p>.</span><span class=nx>message</span><span class=p>.</span><span class=nx>reply_to_message</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kd>let</span> <span class=nx>reply_msg</span> <span class=o>=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>message</span><span class=p>.</span><span class=nx>reply_to_message</span>
+        <span class=kd>let</span> <span class=nx>key</span> <span class=o>=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>chat</span><span class=p>.</span><span class=nx>id</span><span class=p>.</span><span class=nx>toString</span><span class=p>()</span> <span class=o>+</span> <span class=nx>reply_msg</span><span class=p>.</span><span class=nx>message_id</span><span class=p>.</span><span class=nx>toString</span><span class=p>()</span>
+        <span class=kd>let</span> <span class=nx>replyContent</span> <span class=o>=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>message</span><span class=p>.</span><span class=nx>text</span>
+
+        <span class=k>await</span> <span class=nx>client</span><span class=p>.</span><span class=nx>connect</span><span class=p>()</span>
+        <span class=c1>// 查找 approve_link
+</span><span class=c1></span>        <span class=kd>let</span> <span class=nx>link</span> <span class=o>=</span> <span class=k>await</span> <span class=nx>client</span><span class=p>.</span><span class=kr>get</span><span class=p>(</span><span class=nx>key</span><span class=p>)</span>
+        <span class=k>if</span> <span class=p>(</span><span class=nx>link</span><span class=p>)</span> <span class=p>{</span>
+            <span class=kd>let</span> <span class=nx>api</span> <span class=o>=</span> <span class=nx>link</span><span class=p>.</span><span class=nx>replace</span><span class=p>(</span><span class=s2>&#34;open&#34;</span><span class=p>,</span> <span class=s2>&#34;api/open&#34;</span><span class=p>)</span>
+            <span class=c1>// 这里发送的数据为
+</span><span class=c1></span>            <span class=c1>// {
+</span><span class=c1></span>            <span class=c1>//      replyContent: &#39;your reply&#39;
+</span><span class=c1></span>            <span class=c1>// }
+</span><span class=c1></span>            <span class=kd>let</span> <span class=nx>res</span> <span class=o>=</span> <span class=k>await</span> <span class=nx>axios</span><span class=p>.</span><span class=nx>post</span><span class=p>(</span><span class=nx>api</span><span class=p>,</span> <span class=p>{</span>
+                <span class=nx>replyContent</span>
+            <span class=p>})</span>
+            <span class=k>if</span> <span class=p>(</span><span class=nx>res</span><span class=p>.</span><span class=nx>status</span> <span class=o>==</span> <span class=mi>200</span><span class=p>)</span> <span class=p>{</span>
+                <span class=nx>ctx</span><span class=p>.</span><span class=nx>reply</span><span class=p>(</span><span class=s2>&#34;Success to append comment&#34;</span><span class=p>)</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                <span class=nx>ctx</span><span class=p>.</span><span class=nx>reply</span><span class=p>(</span><span class=s2>&#34;Fail to append comment&#34;</span><span class=p>)</span>
+            <span class=p>}</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=nx>ctx</span><span class=p>.</span><span class=nx>reply</span><span class=p>(</span><span class=s2>&#34;Token has expired&#34;</span><span class=p>)</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=p>})</span>
+</code></pre></div><h2 id=效果>效果</h2>
+<p>使用 <code>vercel --prod</code> 部署到生产环境后，让我们来看看实际效果展示</p>
+<p><figure>
+<img src=/cusdis-bot-final-result.jpg loading=lazy alt=cusdis-bot>
+<figcaption>cusdis-bot</figcaption>
+</figure></p>
+<p>你可以给自己的网站添加 <a href=https://cusdis.com/>Cusdis</a> 评论服务，并设置</p>
+</div>
+</div>
+<div class="wrapper comments">
+<div id=cusdis_thread data-host=https://cusdis.limxw.com data-app-id=d5c63066-e952-4a1d-8844-0a9f9796d97d data-page-id=feba7b2afad8bd8045a164e4d611644a data-page-url=https://blog.limx.dev/post/build-telegram-bot-in-vercel-respond-reply/ data-page-title="在 Vercel 上部署 Telegram Bot（二）：通过与回复"></div>
+<script async defer src=https://cusdis.limxw.com/js/cusdis.es.js></script>
+<script>let setCusdisTheme=a=>{let b=document.querySelector('#cusdis_thread iframe');b&&window.CUSDIS.setTheme(a)};window.addEventListener('colorSchemeChange',a=>{setCusdisTheme(a.detail)})</script>
+</div>
+</main><footer class=footer>
+<div class=footer-rows>
+<section class=copyright>
+&copy; 2021 界限
+</section>
+<section class=powerby>
+Power by
+<a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a>
+</section>
+</div>
+</footer><script type=text/javascript src=/ts/script.cd2f157bd7ad4e6fa77a36a13780f122cbaaaa68a1d4154890c9187dd68b674a.js defer></script></body>
+</html>

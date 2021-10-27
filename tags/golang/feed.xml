@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Golang on 界限</title><link>https://blog.limx.dev/tags/golang/</link><description>Recent content in Golang on 界限</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 25 Oct 2021 14:47:30 +0800</lastBuildDate><atom:link href="https://blog.limx.dev/tags/golang/feed.xml" rel="self" type="application/rss+xml"/><item><title>使用 Go 在 Vercel 上部署 Telegram Bot</title><link>https://blog.limx.dev/post/build-telegram-bot-in-vercel-with-go/</link><pubDate>Mon, 25 Oct 2021 14:47:30 +0800</pubDate><guid>https://blog.limx.dev/post/build-telegram-bot-in-vercel-with-go/</guid><description>Telegram Bot 提供了另一种交互方式，而且可以通过 Webhook 的方式将 Bot 后端部署在 Vercel 的 Serverless Function 上，来实现一个 Maintenance-free 的服务。
-这里以 ddns-telegram-bot 为例，这是一个通知用户 DDNS 变动的机器人。
-创建并设置 Bot 创建机器人十分简单，只需要四步
-打开并启动 @BotFather 发送 /newbot 命令 输入机器人名称（相当于别名） 输入机器人用户名（相当于唯一标识符） 然后就会获取到 Bot 的密钥
-初始化项目 安装 Vercel CLI
-# 推荐使用 pnpm pnpm i -g vercel # 使用 npm npm i -g vercel # 使用 yarn yarn global add vercel 初始化项目并下载依赖
-mkdir project-bot cd project-bot go mod init project-bot go get -u github.</description></item></channel></rss>

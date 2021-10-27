@@ -10,7 +10,7 @@
 <meta property="og:description" content="我见、我闻、我写">
 <meta property="og:url" content="https://blog.limx.dev/">
 <meta property="og:site_name" content="界限">
-<meta property="og:type" content="website"><meta property="og:locale" content="zh-cn"><meta property="og:updated_time" content=" 2021-10-25T14:47:30+08:00 ">
+<meta property="og:type" content="website"><meta property="og:locale" content="zh-cn"><meta property="og:updated_time" content=" 2021-10-27T15:07:15+08:00 ">
 <meta name=twitter:card content="summary"><meta name=twitter:title content="界限">
 <meta name=twitter:description content="我见、我闻、我写">
 </head>
@@ -48,18 +48,27 @@
 <div class=page-container>
 <div class="post-intro hero">
 <h1 class=title>
-<a href=/post/build-telegram-bot-in-vercel-with-go/ class=title-link>使用 Go 在 Vercel 上部署 Telegram Bot</a>
+<a href=/post/build-telegram-bot-in-vercel-respond-reply/ class=title-link>在 Vercel 上部署 Telegram Bot（二）：通过与回复</a>
 </h1>
-<p class=description>是机器人！</p>
+<p class=description>Hey Bot, 帮我同意和回复一下评论</p>
 <div class=summary>
-<p>Telegram Bot 提供了另一种交互方式，而且可以通过 Webhook 的方式将 Bot 后端部署在 Vercel 的 Serverless Function 上，来实现一个 Maintenance-free 的服务。</p>
-<p>这里以 <a href=https://github.com/WingLim/ddns-telegram-bot>ddns-telegram-bot</a> 为例，这是一个通知用户 DDNS 变动的机器人。</p>
-<h2 id=创建并设置-bot>创建并设置 Bot</h2>
-<p>创建机器人十分简单， …</p>
+<p>在<a href=https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/>上一篇文章</a>中我们讲了如何在 Vercel 上部署一个简单的 Telegram Bot，这里我们讲讲如何给 Bot 的消息添加可点击的按钮，以及通过回复 Bot 的消息来回复评论</p>
+<h2 id=cusdis-webhook>Cusdis Webhook</h2>
+<p>首先我们先创建一个 <code>api/hook/[chatId].ts</code> 来处理 Cusdis 发送的 Webhook 请求</p>
+<p>在 Vercel 中 <code>[chatId].ts …</code></p>
 </div>
-<a href=/post/build-telegram-bot-in-vercel-with-go/ class=readmore>Continue reading</a>
+<a href=/post/build-telegram-bot-in-vercel-respond-reply/ class=readmore>Continue reading</a>
 </div>
 <div class=blog-list>
+<a href=/post/linux-kernel-practice-hijack-syscall/ class=post-item>
+<div class="post-intro solo">
+<span class=date>March 06, 2020</span>
+<h1 class=title>
+Linux Kernel 实践(二)：劫持系统调用
+</h1>
+<p class=description>通过劫持系统调用表，将原有系统调用替换成自定义系统调用</p>
+</div>
+</a>
 <a href=/post/linux-kernel-practice-hello/ class=post-item>
 <div class="post-intro solo">
 <span class=date>March 06, 2020</span>
