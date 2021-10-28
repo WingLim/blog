@@ -85,19 +85,6 @@ Telegram Bot 有两种模式：
 
 在 Serverless Function 中我们使用 Webhook 的方式来处理请求
 
-在根目录下创建`index.ts`，部署程序时自动设置 Webhook
-
-```ts
-// index.ts
-import { Bot } from 'grammy'
-
-const { BOT_TOKEN, BOT_WEBHOOK } = process.env
-
-export const bot = new Bot(BOT_TOKEN)
-
-bot.api.setWebhook(BOT_WEBHOOK)
-```
-
 然后我们来创建一个简单的命令 `/start`
 
 ```ts
@@ -120,20 +107,45 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
 ## 部署并设置 Webhook
 
-使用 Vercel CLI 进行部署
+根目录下添加 `index.js`
 
-```bash
+```js
+// index.js
+
+import { Bot } from 'grammy'
+
+const { BOT_TOKEN, BOT_WEBHOOK } = process.env
+
+const bot = new Bot(BOT_TOKEN)
+
+console.log('Setting Webhook')
+let res = await bot.api.setWebhook(BOT_WEBHOOK)
+console.log(res)
+```
+
+然后添加脚本到 `package.json`
+
+```json
+"scripts": {
+    "webhook": "vercel env pull && node -r dotenv/config index.js"
+},
+```
+
+使用 Vercel CLI 进行创建并部署项目
+
+```shell
 vercel
 ```
 
 打开 [dashboard](https://vercel.com/dashboard)，设置项目的环境变量
 
-1. `BOT_TOKEN`
+1. `BOT_TOKEN`: `your bot token`
 2. `BOT_WEBHOOK`: `https://your-project-name.vercel.app/api/bot`
 
-最后部署到生产环境中
+最后设置并部署到生产环境中
 
-```bash
+```shell
+pnpm run webhook
 vercel --prod
 ```
 
