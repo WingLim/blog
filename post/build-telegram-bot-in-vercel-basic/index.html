@@ -150,7 +150,9 @@ touch api/bot.ts
 
 </code></pre></div><p>到这里，我们给我们的机器人添加了 <code>/start</code> 命令的处理，当用户发送 <code>/start</code> 到 Bot 时，Bot 会回复 <code>Welcome to use Cusdis Bot</code></p>
 <h2 id=部署并设置-webhook>部署并设置 Webhook</h2>
-<p>根目录下添加 <code>index.js</code></p>
+<p>安装依赖 <code>dotenv</code></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell>pnpm i -D dotenv
+</code></pre></div><p>根目录下添加 <code>index.js</code></p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=c1>// index.js
 </span><span class=c1></span>
 <span class=kr>import</span> <span class=p>{</span> <span class=nx>Bot</span> <span class=p>}</span> <span class=nx>from</span> <span class=s1>&#39;grammy&#39;</span>
