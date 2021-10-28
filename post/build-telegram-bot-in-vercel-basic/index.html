@@ -134,16 +134,7 @@ touch api/bot.ts
 </li>
 </ol>
 <p>在 Serverless Function 中我们使用 Webhook 的方式来处理请求</p>
-<p>在根目录下创建<code>index.ts</code>，部署程序时自动设置 Webhook</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// index.ts
-</span><span class=c1></span><span class=kr>import</span> <span class=p>{</span> <span class=nx>Bot</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;grammy&#39;</span>
-
-<span class=kr>const</span> <span class=p>{</span> <span class=nx>BOT_TOKEN</span><span class=p>,</span> <span class=nx>BOT_WEBHOOK</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>process</span><span class=p>.</span><span class=nx>env</span>
-
-<span class=kr>export</span> <span class=kr>const</span> <span class=nx>bot</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Bot</span><span class=p>(</span><span class=nx>BOT_TOKEN</span><span class=p>)</span>
-
-<span class=nx>bot</span><span class=p>.</span><span class=nx>api</span><span class=p>.</span><span class=nx>setWebhook</span><span class=p>(</span><span class=nx>BOT_WEBHOOK</span><span class=p>)</span>
-</code></pre></div><p>然后我们来创建一个简单的命令 <code>/start</code></p>
+<p>然后我们来创建一个简单的命令 <code>/start</code></p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-ts data-lang=ts><span class=c1>// api/bot.ts
 </span><span class=c1></span><span class=kr>import</span> <span class=p>{</span> <span class=nx>VercelRequest</span><span class=p>,</span> <span class=nx>VercelResponse</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;@vercel/node&#39;</span>
 <span class=kr>import</span> <span class=p>{</span> <span class=nx>webhookCallback</span> <span class=p>}</span> <span class=kr>from</span> <span class=s1>&#39;grammy&#39;</span>
@@ -159,15 +150,32 @@ touch api/bot.ts
 
 </code></pre></div><p>到这里，我们给我们的机器人添加了 <code>/start</code> 命令的处理，当用户发送 <code>/start</code> 到 Bot 时，Bot 会回复 <code>Welcome to use Cusdis Bot</code></p>
 <h2 id=部署并设置-webhook>部署并设置 Webhook</h2>
-<p>使用 Vercel CLI 进行部署</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>vercel
+<p>根目录下添加 <code>index.js</code></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-js data-lang=js><span class=c1>// index.js
+</span><span class=c1></span>
+<span class=kr>import</span> <span class=p>{</span> <span class=nx>Bot</span> <span class=p>}</span> <span class=nx>from</span> <span class=s1>&#39;grammy&#39;</span>
+
+<span class=kr>const</span> <span class=p>{</span> <span class=nx>BOT_TOKEN</span><span class=p>,</span> <span class=nx>BOT_WEBHOOK</span> <span class=p>}</span> <span class=o>=</span> <span class=nx>process</span><span class=p>.</span><span class=nx>env</span>
+
+<span class=kr>const</span> <span class=nx>bot</span> <span class=o>=</span> <span class=k>new</span> <span class=nx>Bot</span><span class=p>(</span><span class=nx>BOT_TOKEN</span><span class=p>)</span>
+
+<span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=s1>&#39;Setting Webhook&#39;</span><span class=p>)</span>
+<span class=kd>let</span> <span class=nx>res</span> <span class=o>=</span> <span class=kr>await</span> <span class=nx>bot</span><span class=p>.</span><span class=nx>api</span><span class=p>.</span><span class=nx>setWebhook</span><span class=p>(</span><span class=nx>BOT_WEBHOOK</span><span class=p>)</span>
+<span class=nx>console</span><span class=p>.</span><span class=nx>log</span><span class=p>(</span><span class=nx>res</span><span class=p>)</span>
+</code></pre></div><p>然后添加脚本到 <code>package.json</code></p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=s2>&#34;scripts&#34;</span><span class=err>:</span> <span class=p>{</span>
+    <span class=nt>&#34;webhook&#34;</span><span class=p>:</span> <span class=s2>&#34;vercel env pull &amp;&amp; node -r dotenv/config index.js&#34;</span>
+<span class=p>}</span><span class=err>,</span>
+</code></pre></div><p>使用 Vercel CLI 进行创建并部署项目</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell>vercel
 </code></pre></div><p>打开 <a href=https://vercel.com/dashboard>dashboard</a>，设置项目的环境变量</p>
 <ol>
-<li><code>BOT_TOKEN</code></li>
+<li><code>BOT_TOKEN</code>: <code>your bot token</code></li>
 <li><code>BOT_WEBHOOK</code>: <code>https://your-project-name.vercel.app/api/bot</code></li>
 </ol>
-<p>最后部署到生产环境中</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>vercel --prod
+<p>最后设置并部署到生产环境中</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell>pnpm run webhook
+vercel --prod
 </code></pre></div><h2 id=结果>结果</h2>
 <p>打开 Bot，发送 <code>/start</code></p>
 <p><figure>
