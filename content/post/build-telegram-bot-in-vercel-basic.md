@@ -107,6 +107,12 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
 ## 部署并设置 Webhook
 
+安装依赖 `dotenv`
+
+```shell
+pnpm i -D dotenv
+```
+
 根目录下添加 `index.js`
 
 ```js
