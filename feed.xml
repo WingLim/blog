@@ -1,5 +1,5 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>界限</title><link>https://blog.limx.dev/</link><description>Recent content on 界限</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Wed, 27 Oct 2021 15:07:15 +0800</lastBuildDate><atom:link href="https://blog.limx.dev/feed.xml" rel="self" type="application/rss+xml"/><item><title>在 Vercel 上部署 Telegram Bot（二）：通过与回复</title><link>https://blog.limx.dev/post/build-telegram-bot-in-vercel-respond-reply/</link><pubDate>Wed, 27 Oct 2021 15:07:15 +0800</pubDate><guid>https://blog.limx.dev/post/build-telegram-bot-in-vercel-respond-reply/</guid><description>
-&lt;p>在&lt;a href="https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/">上一篇文章&lt;/a>中我们讲了如何在 Vercel 上部署一个简单的 Telegram Bot，这里我们讲讲如何给 Bot 的消息添加可点击的按钮，以及通过回复 Bot 的消息来回复评论&lt;/p>
+&lt;p>在 &lt;a href="https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/">上一篇文章&lt;/a> 中我们讲了如何在 Vercel 上部署一个简单的 Telegram Bot，这里我们讲讲如何给 Bot 的消息添加可点击的按钮，以及通过回复 Bot 的消息来回复评论&lt;/p>
 &lt;h2 id="cusdis-webhook">Cusdis Webhook&lt;/h2>
 &lt;p>首先我们先创建一个 &lt;code>api/hook/[chatId].ts&lt;/code> 来处理 Cusdis 发送的 Webhook 请求&lt;/p>
 &lt;p>在 Vercel 中 &lt;code>[chatId].ts&lt;/code> 可以对应路径 &lt;code>/api/hook/123456&lt;/code>&lt;/p>
@@ -47,7 +47,7 @@
 &lt;span class="k">await&lt;/span> &lt;span class="nx">ctx&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">reply&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sb">`Your Webhook URL:&lt;/span>&lt;span class="err">\&lt;/span>&lt;span class="sb">n &lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nx">hookUrl&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="sb">`&lt;/span>&lt;span class="p">)&lt;/span>
 &lt;span class="p">})&lt;/span>
 &lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="使用-redis">使用 Redis&lt;/h2>
-&lt;p>因为&lt;a href="https://core.telegram.org/bots/api#inlinekeyboardbutton">InlineKeyboardButton&lt;/a>的 callback_data 最高支持 64 字节的数据，而 Cusdis 的 &lt;code>approve_link&lt;/code> 包含了 SHA256 的 token，所以我们没有办法直接将 &lt;code>approve_link&lt;/code> 包在 Button 里面一起发给用户，所以这里用到 &lt;a href="https://upstash.com/">Upstash&lt;/a>（一个 Serverless 的 Redis 服务）来保存&lt;/p>
+&lt;p>因为 &lt;a href="https://core.telegram.org/bots/api#inlinekeyboardbutton">InlineKeyboardButton&lt;/a> 的 &lt;code>callback_data&lt;/code> 最高支持 64 字节的数据，而 Cusdis 的 &lt;code>approve_link&lt;/code> 包含了 SHA256 的 token，所以我们没有办法直接将 &lt;code>approve_link&lt;/code> 包在 Button 里面一起发给用户，所以这里用到 &lt;a href="https://upstash.com/">Upstash&lt;/a>（一个 Serverless 的 Redis 服务）来保存&lt;/p>
 &lt;p>在 Vercel 中可以通过 Intergrations 来一键集成到项目中：&lt;a href="https://vercel.com/integrations/upstash">Upstash in Vercel&lt;/a>&lt;/p>
 &lt;p>添加库&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-shell" data-lang="shell">pnpm i redis@next
