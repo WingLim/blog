@@ -11,7 +11,7 @@ categories:
 - Tech
 ---
 
-在[上一篇文章](https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/)中我们讲了如何在 Vercel 上部署一个简单的 Telegram Bot，这里我们讲讲如何给 Bot 的消息添加可点击的按钮，以及通过回复 Bot 的消息来回复评论
+在 [上一篇文章](https://blog.limx.dev/post/build-telegram-bot-in-vercel-basic/) 中我们讲了如何在 Vercel 上部署一个简单的 Telegram Bot，这里我们讲讲如何给 Bot 的消息添加可点击的按钮，以及通过回复 Bot 的消息来回复评论
 
 ## Cusdis Webhook
 
@@ -78,7 +78,7 @@ bot.command('gethook', async (ctx) => {
 
 ## 使用 Redis
 
-因为[InlineKeyboardButton](https://core.telegram.org/bots/api#inlinekeyboardbutton)的 callback_data 最高支持 64 字节的数据，而 Cusdis 的 `approve_link` 包含了 SHA256 的 token，所以我们没有办法直接将 `approve_link` 包在 Button 里面一起发给用户，所以这里用到 [Upstash](https://upstash.com/)（一个 Serverless 的 Redis 服务）来保存
+因为 [InlineKeyboardButton](https://core.telegram.org/bots/api#inlinekeyboardbutton) 的 `callback_data` 最高支持 64 字节的数据，而 Cusdis 的 `approve_link` 包含了 SHA256 的 token，所以我们没有办法直接将 `approve_link` 包在 Button 里面一起发给用户，所以这里用到 [Upstash](https://upstash.com/)（一个 Serverless 的 Redis 服务）来保存
 
 在 Vercel 中可以通过 Intergrations 来一键集成到项目中：[Upstash in Vercel](https://vercel.com/integrations/upstash)
 
